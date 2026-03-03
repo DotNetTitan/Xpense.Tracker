@@ -23,6 +23,42 @@ export function formatDate(timestamp: number): string {
   });
 }
 
+/** Map raw SMS sender codes to human-readable bank names. */
+const BANK_NAME_MAP: Record<string, string> = {
+  ICICIB: 'ICICI Bank',
+  ICICIT: 'ICICI Bank',
+  HDFCBK: 'HDFC Bank',
+  RMHDFB: 'HDFC Bank',
+  SBINBK: 'SBI',
+  SBIINB: 'SBI',
+  SBISMS: 'SBI',
+  AXISBK: 'Axis Bank',
+  KOTAKB: 'Kotak Bank',
+  YESBNK: 'Yes Bank',
+  INDBNK: 'Indian Bank',
+  CANBNK: 'Canara Bank',
+  PNBSMS: 'Punjab National Bank',
+  BOIIND: 'Bank of India',
+  CENTBK: 'Central Bank',
+  UNIONB: 'Union Bank',
+  IDBIBK: 'IDBI Bank',
+  BOBACC: 'Bank of Baroda',
+  SCBANK: 'Standard Chartered',
+  CITIBK: 'Citibank',
+  FEDBNK: 'Federal Bank',
+  FEDBK: 'Federal Bank',
+};
+
+/**
+ * Convert a raw SMS sender address (e.g. "AX-ICICIT-T" or "ICICIB") to a
+ * human-readable bank name. Falls back to the original string if unknown.
+ */
+export function normalizeBankName(raw: string): string {
+  // Strip common carrier prefixes like "AD-", "AX-", "BZ-", "VM-" and suffixes like "-T"
+  const cleaned = raw.toUpperCase().replace(/^[A-Z]{2}-/, '').replace(/-[A-Z]$/, '');
+  return BANK_NAME_MAP[cleaned] ?? raw;
+}
+
 /**
  * Return a "YYYY-MM" string from a Date or timestamp.
  */

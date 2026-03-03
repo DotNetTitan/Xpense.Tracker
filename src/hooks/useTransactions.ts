@@ -1,9 +1,11 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+    deleteTransaction,
     getCategoryTotals,
     getMonthlyTotals,
     getTransactionCount,
     getTransactions,
+    updateTransactionCategory,
 } from '../services/db.service';
 import { useFilterStore } from '../store/filterStore';
 import { CategoryTotal, MonthlyTotal } from '../types';
@@ -61,4 +63,28 @@ export function useInvalidateTransactions() {
         queryClient.invalidateQueries({ queryKey: ['transactionCount'] }),
       ])
     );
+}
+
+/** Delete a transaction and invalidate all related caches. */
+export function useDeleteTransaction() {
+  const invalidate = useInvalidateTransactions();
+  return useMutation({
+    mutationFn: (id: string) => {
+      deleteTransaction(id);
+      return Promise.resolve();
+    },
+    onSuccess: invalidate,
+  });
+}
+
+/** Update the category of a transaction and invalidate caches. */
+export function useUpdateTransactionCategory() {
+  const invalidate = useInvalidateTransactions();
+  return useMutation({
+    mutationFn: ({ id, category }: { id: string; category: string }) => {
+      updateTransactionCategory(id, category);
+      return Promise.resolve();
+    },
+    onSuccess: invalidate,
+  });
 }

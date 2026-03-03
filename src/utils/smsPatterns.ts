@@ -22,13 +22,6 @@ const PATTERNS: SmsPattern[] = [
     accountGroup: 1,
     merchantGroup: 3,
   },
-  // ICICI upcoming/scheduled debit: "ICICI Bank SAVINGS Account XX747 will be debited for Rs 990.00 on 03-Mar-26"
-  {
-    regex: /ICICI Bank\s+.+?Acc(?:t|ount)?\s+[Xx]+(\d+)\s+will\s+be\s+debited\s+for\s+Rs\.?\s*([\d,]+(?:\.\d{1,2})?)/i,
-    type: 'debit',
-    amountGroup: 2,
-    accountGroup: 1,
-  },
   // ICICI credit with label: "ICICI Bank Acc XX747 is credited with salary of Rs. 1,00,000.00 on 02-Mar-26"
   {
     regex: /ICICI Bank\s+Acc(?:t|ount)?\s+[Xx]+(\d+)\s+is\s+credited\s+with\s+(.+?)\s+of\s+Rs\.?\s*([\d,]+(?:\.\d{1,2})?)/i,
@@ -103,10 +96,28 @@ export function isBankSender(address: string): boolean {
 }
 
 /**
+ * Phrases that indicate a future/scheduled notification rather than a
+ * completed transaction. SMS bodies containing any of these should be
+ * rejected before pattern matching.
+ */
+const FUTURE_TENSE_PATTERNS = [
+  /will\s+be\s+debited/i,
+  /will\s+be\s+credited/i,
+  /scheduled\s+(?:debit|credit|payment)/i,
+  /upcoming\s+(?:debit|payment|emi)/i,
+  /due\s+(?:on|date)/i,
+  /autopay\s+(?:due|scheduled|reminder)/i,
+  /mandate\s+registered/i,
+  /standing\s+instruction\s+(?:set|registered|created)/i,
+];
+
+/**
  * Parse a bank SMS body and extract transaction details.
  * Returns null if the SMS does not match any known pattern.
  */
 export function parseBankSMS(body: string): ParsedTransaction | null {
+  // Reject future-tense notifications — not real transactions
+  if (FUTURE_TENSE_PATTERNS.some((re) => re.test(body))) return null;
   for (const p of PATTERNS) {
     const match = body.match(p.regex);
     if (!match) continue;

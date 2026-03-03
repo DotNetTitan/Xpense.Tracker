@@ -54,12 +54,13 @@ export function insertTransaction(tx: Transaction): void {
   );
 }
 
-/** Bulk-insert an array of transactions (dedup via sms_id). */
-export function bulkInsertTransactions(txs: Transaction[]): void {
+/** Bulk-insert an array of transactions (dedup via sms_id). Returns the number of rows actually inserted. */
+export function bulkInsertTransactions(txs: Transaction[]): number {
   const database = getDb();
+  let inserted = 0;
   database.withTransactionSync(() => {
     for (const tx of txs) {
-      database.runSync(
+      const result = database.runSync(
         `INSERT OR IGNORE INTO transactions
            (id, amount, type, merchant, bank, account, category, date, raw_sms, sms_id)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -76,8 +77,10 @@ export function bulkInsertTransactions(txs: Transaction[]): void {
           tx.smsId,
         ]
       );
+      inserted += result.changes;
     }
   });
+  return inserted;
 }
 
 /** Fetch transactions filtered by month (YYYY-MM) and optionally category. */
@@ -149,6 +152,18 @@ export function getCategoryTotals(monthKey: string): { category: string; total: 
      ORDER BY total DESC`,
     [start, end]
   );
+}
+
+/** Delete a transaction by id. */
+export function deleteTransaction(id: string): void {
+  const database = getDb();
+  database.runSync(`DELETE FROM transactions WHERE id = ?`, [id]);
+}
+
+/** Update the category of a transaction. */
+export function updateTransactionCategory(id: string, category: string): void {
+  const database = getDb();
+  database.runSync(`UPDATE transactions SET category = ? WHERE id = ?`, [category, id]);
 }
 
 /** Count total rows in the transactions table. */

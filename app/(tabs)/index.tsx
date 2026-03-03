@@ -1,19 +1,21 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useState } from 'react';
 import {
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    View,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
 } from 'react-native';
 import { ActivityIndicator, FAB, Snackbar, Surface, Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EmptyState } from '../../src/components/EmptyState';
 import { MonthPicker } from '../../src/components/MonthPicker';
 import { TransactionCard } from '../../src/components/TransactionCard';
+import { TransactionDetailModal } from '../../src/components/TransactionDetailModal';
 import { useSmsSync } from '../../src/hooks/useSmsSync';
 import { useCategoryTotals, useTransactionCount, useTransactions } from '../../src/hooks/useTransactions';
 import { useFilterStore } from '../../src/store/filterStore';
+import { Transaction } from '../../src/types';
 import { CATEGORIES } from '../../src/utils/categories';
 import { formatCurrency } from '../../src/utils/formatters';
 
@@ -23,6 +25,7 @@ export default function DashboardScreen() {
   const { data: categoryTotals = [] } = useCategoryTotals();
   const { data: txCount = 0 } = useTransactionCount();
   const { sync, status, result, error, reset } = useSmsSync();
+  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
 
   const totalSpent = transactions
     .filter((t) => t.type === 'debit')
@@ -116,11 +119,17 @@ export default function DashboardScreen() {
             />
           ) : (
             recentTransactions.map((tx) => (
-              <TransactionCard key={tx.id} transaction={tx} />
+              <TransactionCard key={tx.id} transaction={tx} onPress={setSelectedTx} />
             ))
           )}
         </View>
       </ScrollView>
+
+      {/* Detail modal */}
+      <TransactionDetailModal
+        transaction={selectedTx}
+        onClose={() => setSelectedTx(null)}
+      />
 
       {/* Sync FAB */}
       <FAB
@@ -141,7 +150,9 @@ export default function DashboardScreen() {
         style={status === 'error' ? styles.snackError : styles.snackSuccess}
       >
         {status === 'done'
-          ? `Imported ${result?.imported ?? 0} transaction(s)`
+          ? result?.imported === 0
+            ? `All ${result.total} transactions already synced`
+            : `Imported ${result?.imported} new of ${result?.total} found`
           : error ?? 'Something went wrong'}
       </Snackbar>
     </SafeAreaView>

@@ -42,12 +42,12 @@ export function useSmsSync() {
       const parsed = await fetchAndParseBankSMS(daysBack);
 
       // Bulk insert (dedup via sms_id UNIQUE constraint)
-      bulkInsertTransactions(parsed);
+      const inserted = bulkInsertTransactions(parsed);
 
       // Refresh queries
       await invalidate();
 
-      setResult({ imported: parsed.length, total: parsed.length });
+      setResult({ imported: inserted, total: parsed.length });
       setStatus('done');
     } catch (err: any) {
       setError(err?.message ?? 'An unknown error occurred.');

@@ -1,22 +1,27 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Surface, Text } from 'react-native-paper';
 import { Transaction } from '../types';
 import { CATEGORIES } from '../utils/categories';
-import { formatCurrency, formatDate } from '../utils/formatters';
+import { formatCurrency, formatDate, normalizeBankName } from '../utils/formatters';
 
 interface Props {
   transaction: Transaction;
+  onPress?: (transaction: Transaction) => void;
 }
 
-export function TransactionCard({ transaction }: Props) {
+export function TransactionCard({ transaction, onPress }: Props) {
   const { amount, type, merchant, category, date, bank } = transaction;
   const cat = CATEGORIES[category] ?? CATEGORIES.Uncategorized;
   const isDebit = type === 'debit';
 
   return (
-    <Surface style={styles.card} elevation={1}>
+    <TouchableOpacity
+      activeOpacity={onPress ? 0.7 : 1}
+      onPress={onPress ? () => onPress(transaction) : undefined}
+    >
+      <Surface style={styles.card} elevation={1}>
       {/* Icon */}
       <View style={[styles.iconWrap, { backgroundColor: cat.color + '22' }]}>
         <MaterialIcons name={cat.icon as any} size={22} color={cat.color} />
@@ -25,7 +30,7 @@ export function TransactionCard({ transaction }: Props) {
       {/* Details */}
       <View style={styles.details}>
         <Text style={styles.merchant} numberOfLines={1}>
-          {merchant || bank}
+          {merchant || normalizeBankName(bank)}
         </Text>
         <Text style={styles.meta}>
           {category} · {formatDate(date)}
@@ -37,6 +42,7 @@ export function TransactionCard({ transaction }: Props) {
         {isDebit ? '−' : '+'} {formatCurrency(amount)}
       </Text>
     </Surface>
+    </TouchableOpacity>
   );
 }
 

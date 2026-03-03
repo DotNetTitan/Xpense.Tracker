@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     FlatList,
     RefreshControl,
@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { EmptyState } from '../../src/components/EmptyState';
 import { MonthPicker } from '../../src/components/MonthPicker';
 import { TransactionCard } from '../../src/components/TransactionCard';
+import { TransactionDetailModal } from '../../src/components/TransactionDetailModal';
 import { useTransactions } from '../../src/hooks/useTransactions';
 import { useFilterStore } from '../../src/store/filterStore';
 import { Transaction } from '../../src/types';
@@ -32,6 +33,7 @@ export default function TransactionsScreen() {
   const { selectedMonth, setSelectedMonth, selectedCategory, setSelectedCategory } =
     useFilterStore();
   const { data: transactions = [], isLoading, refetch } = useTransactions();
+  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
 
   const grouped = groupByDate(transactions);
 
@@ -93,12 +95,22 @@ export default function TransactionsScreen() {
             <View>
               <Text style={styles.dateHeader}>{item.date}</Text>
               {item.items.map((tx) => (
-                <TransactionCard key={tx.id} transaction={tx} />
+                <TransactionCard
+                  key={tx.id}
+                  transaction={tx}
+                  onPress={setSelectedTx}
+                />
               ))}
             </View>
           )}
         />
       )}
+
+      {/* Detail modal */}
+      <TransactionDetailModal
+        transaction={selectedTx}
+        onClose={() => setSelectedTx(null)}
+      />
     </SafeAreaView>
   );
 }

@@ -14,7 +14,7 @@ interface FilterState {
 export const useFilterStore = create<FilterState>((set) => ({
   selectedMonth: toMonthKey(new Date()),
   selectedCategory: 'All',
-  setSelectedMonth: (month) => set({ selectedMonth: month }),
+  setSelectedMonth: (month) => set({ selectedMonth: month, selectedCategory: 'All' }),
   setSelectedCategory: (category) => set({ selectedCategory: category }),
   resetFilters: () =>
     set({ selectedMonth: toMonthKey(new Date()), selectedCategory: 'All' }),

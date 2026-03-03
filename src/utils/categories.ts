@@ -15,58 +15,95 @@ export const CATEGORIES: Record<string, Category> = {
 };
 
 /**
- * Keyword-based auto-categorization from merchant name.
- * Checks the merchant string against known keywords for each category.
+ * Keyword maps for categorization.
+ *
+ * MERCHANT_KEYWORDS  – matched against the parsed merchant name only.
+ *   Safe to be broad because merchant names are already extracted & short.
+ *
+ * SMS_KEYWORDS – matched against the full raw SMS body only as a fallback
+ *   when the merchant field yields no match.  Must be very specific brand/
+ *   service names to avoid false positives on generic SMS words.
  */
-const KEYWORD_MAP: Array<{ keywords: string[]; category: string }> = [
+const MERCHANT_KEYWORDS: Array<{ keywords: string[]; category: string }> = [
   {
     keywords: ['swiggy', 'zomato', 'mcdonald', 'kfc', 'pizza', 'burger', 'cafe', 'restaurant', 'food', 'domino', 'subway', 'dunkin', 'starbucks'],
     category: 'Food',
   },
   {
-    keywords: ['uber', 'ola', 'rapido', 'redbus', 'petrol', 'fuel', 'metro', 'irctc', 'auto', 'taxi', 'bus', 'transport'],
+    keywords: ['uber', 'ola', 'rapido', 'redbus', 'petrol', 'fuel', 'metro', 'irctc', 'taxi', 'bus', 'transport'],
     category: 'Transport',
   },
   {
-    keywords: ['amazon', 'flipkart', 'myntra', 'ajio', 'nykaa', 'meesho', 'shopclues', 'snapdeal', 'mall', 'store', 'shop', 'retail'],
+    keywords: ['amazon', 'flipkart', 'myntra', 'ajio', 'nykaa', 'meesho', 'shopclues', 'snapdeal', 'mall', 'retail'],
     category: 'Shopping',
   },
   {
-    keywords: ['netflix', 'prime', 'hotstar', 'spotify', 'youtube', 'cinema', 'movie', 'pvr', 'inox', 'bookmyshow', 'gaming', 'steam'],
+    keywords: ['netflix', 'prime video', 'hotstar', 'spotify', 'youtube', 'cinema', 'pvr', 'inox', 'bookmyshow', 'gaming', 'steam', 'google play', 'apple music', 'apple tv', 'zee5', 'sonyliv', 'jiocinema', 'mxplayer', 'voot', 'discord', 'playstation', 'xbox'],
     category: 'Entertainment',
   },
   {
-    keywords: ['electricity', 'bill', 'recharge', 'airtel', 'jio', 'bsnl', 'vodafone', 'vi ', 'tata sky', 'piped gas', 'water', 'util'],
+    keywords: ['electricity', 'recharge', 'airtel', 'jio', 'bsnl', 'vodafone idea', 'vodafone', 'vi mobile', 'tata sky', 'piped gas', 'water board', 'bescom', 'mseb', 'tneb', 'bses'],
     category: 'Utilities',
   },
   {
-    keywords: ['hospital', 'clinic', 'pharmacy', 'medplus', 'apollomedics', 'apollo', 'health', 'doctor', 'medical', 'lab', 'diagnostic'],
+    keywords: ['hospital', 'clinic', 'pharmacy', 'medplus', 'apollo pharmacy', 'apollo', 'health', 'doctor', 'medical', 'diagnostic', 'practo', 'tata 1mg', '1mg', 'netmeds'],
     category: 'Health',
   },
   {
-    keywords: ['flight', 'airline', 'hotel', 'makemytrip', 'goibibo', 'yatra', 'cleartrip', 'oyo', 'booking.com', 'airbnb', 'trivago'],
+    keywords: ['flight', 'airline', 'indigo', 'air india', 'spicejet', 'vistara', 'makemytrip', 'goibibo', 'yatra', 'cleartrip', 'oyo', 'airbnb', 'trivago'],
     category: 'Travel',
   },
   {
-    keywords: ['bigbasket', 'grofers', 'blinkit', 'zepto', 'dmart', 'reliance fresh', 'more ', 'supermarket', 'vegetable', 'grocery'],
+    keywords: ['bigbasket', 'grofers', 'blinkit', 'zepto', 'dmart', 'reliance fresh', 'more supermarket', 'supermarket', 'grocery'],
     category: 'Groceries',
   },
   {
-    keywords: ['udemy', 'coursera', 'byju', 'unacademy', 'school', 'college', 'university', 'tuition', 'education', 'book', 'library'],
+    keywords: ['udemy', 'coursera', 'byju', 'unacademy', 'school', 'college', 'university', 'tuition', 'education', 'library'],
     category: 'Education',
   },
   {
-    keywords: ['emi', 'loan', 'insurance', 'mutual fund', 'sip', 'nps', 'investment', 'lic', 'hdfc life', 'icici pru', 'bank', 'finance'],
+    keywords: ['emi', 'loan', 'insurance', 'mutual fund', 'sip', 'nps', 'investment', 'lic', 'hdfc life', 'icici pru', 'zerodha', 'groww', 'upstox'],
     category: 'Finance',
   },
 ];
 
+/**
+ * Conservative keywords matched only against the raw SMS body (fallback).
+ * Only include proper nouns / brand names — never generic English words.
+ */
+const SMS_KEYWORDS: Array<{ keywords: string[]; category: string }> = [
+  { keywords: ['swiggy', 'zomato', 'mcdonald', 'dominos', 'starbucks', 'kfc'], category: 'Food' },
+  { keywords: ['uber', 'ola cabs', 'rapido', 'redbus', 'irctc'], category: 'Transport' },
+  { keywords: ['amazon', 'flipkart', 'myntra', 'ajio', 'nykaa', 'meesho'], category: 'Shopping' },
+  { keywords: ['netflix', 'hotstar', 'spotify', 'bookmyshow', 'pvr cinemas', 'inox', 'google play', 'apple music', 'apple tv', 'zee5', 'sonyliv', 'jiocinema', 'discord', 'playstation', 'xbox game'], category: 'Entertainment' },
+  { keywords: ['airtel', 'jio recharge', 'bsnl', 'vodafone idea', 'tata sky', 'bescom', 'mseb'], category: 'Utilities' },
+  { keywords: ['apollo pharmacy', 'medplus', 'netmeds', 'tata 1mg', 'practo'], category: 'Health' },
+  { keywords: ['makemytrip', 'goibibo', 'cleartrip', 'indigo airlines', 'air india', 'spicejet'], category: 'Travel' },
+  { keywords: ['bigbasket', 'blinkit', 'zepto', 'grofers', 'dmart'], category: 'Groceries' },
+  { keywords: ['udemy', 'coursera', 'byjus', 'unacademy'], category: 'Education' },
+  { keywords: ['mutual fund', 'hdfc life', 'icici prudential', 'lic premium', 'zerodha', 'groww'], category: 'Finance' },
+];
+
 export function categorizeTransaction(merchant?: string, rawSms?: string): string {
-  const text = `${merchant ?? ''} ${rawSms ?? ''}`.toLowerCase();
-  for (const { keywords, category } of KEYWORD_MAP) {
-    if (keywords.some((kw) => text.includes(kw))) {
-      return category;
+  // Pass 1 – merchant name only (fast, low false-positive risk)
+  if (merchant) {
+    const m = merchant.toLowerCase();
+    for (const { keywords, category } of MERCHANT_KEYWORDS) {
+      if (keywords.some((kw) => m.includes(kw))) {
+        return category;
+      }
     }
   }
+
+  // Pass 2 – full SMS body with a tighter keyword set (fallback)
+  if (rawSms) {
+    const s = rawSms.toLowerCase();
+    for (const { keywords, category } of SMS_KEYWORDS) {
+      if (keywords.some((kw) => s.includes(kw))) {
+        return category;
+      }
+    }
+  }
+
   return 'Uncategorized';
 }
