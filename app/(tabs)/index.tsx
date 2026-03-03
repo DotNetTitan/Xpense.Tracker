@@ -1,5 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   RefreshControl,
   ScrollView,
@@ -26,6 +26,14 @@ export default function DashboardScreen() {
   const { data: txCount = 0 } = useTransactionCount();
   const { sync, status, result, error, reset } = useSmsSync();
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+  const hasSyncedOnMount = useRef(false);
+
+  // Auto-sync once per session when the app opens
+  useEffect(() => {
+    if (hasSyncedOnMount.current) return;
+    hasSyncedOnMount.current = true;
+    sync();
+  }, [sync]);
 
   const totalSpent = transactions
     .filter((t) => t.type === 'debit')
