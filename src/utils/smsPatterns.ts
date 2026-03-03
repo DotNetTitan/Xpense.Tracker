@@ -14,30 +14,44 @@ interface SmsPattern {
 }
 
 const PATTERNS: SmsPattern[] = [
-  // ICICI: "INR 2,000.00 spent on ICICI Bank Card XX1234 at AMAZON on 01-Mar-26"
+  // ICICI UPI debit: "ICICI Bank Acct XX747 debited for Rs 46.00 on 28-Feb-26; SWIGGY credited. UPI:..."
   {
-    regex: /INR\s+([\d,]+(?:\.\d{1,2})?)\s+spent\s+on\s+.+?Card\s+[Xx*]+(\d{4})(?:\s+at\s+([A-Z0-9 &/._-]+?))?(?:\s+on\s|\s*\.|\s*$)/i,
+    regex: /ICICI Bank\s+(?:SAVINGS\s+)?Acc(?:t|ount)?\s+[Xx]+(\d+)\s+debited\s+for\s+Rs\.?\s*([\d,]+(?:\.\d{1,2})?)\s+on\s+[\d\w-]+;\s*(.+?)\s+credited/i,
     type: 'debit',
-    amountGroup: 1,
-    accountGroup: 2,
+    amountGroup: 2,
+    accountGroup: 1,
     merchantGroup: 3,
   },
-  // ICICI UPI: "INR 500.00 debited from A/c XX1234 on 01-Mar-26; UPI:ZOMATO"
+  // ICICI upcoming/scheduled debit: "ICICI Bank SAVINGS Account XX747 will be debited for Rs 990.00 on 03-Mar-26"
   {
-    regex: /INR\s+([\d,]+(?:\.\d{1,2})?)\s+debited\s+from\s+(?:A\/c\s*[Xx*]+(\d{4}))?(?:.*?UPI:([A-Z0-9@._-]+))?/i,
+    regex: /ICICI Bank\s+.+?Acc(?:t|ount)?\s+[Xx]+(\d+)\s+will\s+be\s+debited\s+for\s+Rs\.?\s*([\d,]+(?:\.\d{1,2})?)/i,
     type: 'debit',
-    amountGroup: 1,
-    accountGroup: 2,
-    merchantGroup: 3,
+    amountGroup: 2,
+    accountGroup: 1,
   },
-  // ICICI credit: "INR 500.00 credited to A/c XX1234"
+  // ICICI credit with label: "ICICI Bank Acc XX747 is credited with salary of Rs. 1,00,000.00 on 02-Mar-26"
   {
-    regex: /INR\s+([\d,]+(?:\.\d{1,2})?)\s+credited\s+to\s+(?:A\/c\s*[Xx*]+(\d{4}))?/i,
+    regex: /ICICI Bank\s+Acc(?:t|ount)?\s+[Xx]+(\d+)\s+is\s+credited\s+with\s+(.+?)\s+of\s+Rs\.?\s*([\d,]+(?:\.\d{1,2})?)/i,
+    type: 'credit',
+    amountGroup: 3,
+    accountGroup: 1,
+    merchantGroup: 2,
+  },
+  // Federal Bank credit: "Dear Customer, Rs.4500 credited to your A/c XX7806 on 02MAR2026"
+  {
+    regex: /Rs\.?\s*([\d,]+(?:\.\d{1,2})?)\s+credited\s+to\s+your\s+A\/c\s+[Xx]+(\d+)/i,
     type: 'credit',
     amountGroup: 1,
     accountGroup: 2,
   },
-  // HDFC: "Rs.1,500.00 debited from A/c **1234 at SWIGGY on 01-Mar-26"
+  // Federal Bank debit: "Rs.4500 debited from your A/c XX7806"
+  {
+    regex: /Rs\.?\s*([\d,]+(?:\.\d{1,2})?)\s+debited\s+from\s+your\s+A\/c\s+[Xx]+(\d+)/i,
+    type: 'debit',
+    amountGroup: 1,
+    accountGroup: 2,
+  },
+  // HDFC: "Rs.1,500.00 debited from A/c **1234 at SWIGGY"
   {
     regex: /Rs\.?\s*([\d,]+(?:\.\d{1,2})?)\s+debited\s+from\s+(?:A\/c\s*[*x]+(\d{4}))?\s*(?:at\s+([A-Z0-9 &/._-]+?))?(?:\s+on|\s*\.|VPA|$)/i,
     type: 'debit',
@@ -45,20 +59,12 @@ const PATTERNS: SmsPattern[] = [
     accountGroup: 2,
     merchantGroup: 3,
   },
-  // SBI: "Your A/c XXXX1234 debited by Rs.500 on 01-03-26 towards UPI/ZOMATO"
+  // SBI: "Your A/c XXXX1234 debited by Rs.500"
   {
     regex: /A\/c\s*[Xx*]+(\d{4})\s+debited\s+by\s+Rs\.?\s*([\d,]+(?:\.\d{1,2})?)(?:.*?(?:UPI\/|towards\s+)([A-Z0-9@._-]+))?/i,
     type: 'debit',
     amountGroup: 2,
     accountGroup: 1,
-    merchantGroup: 3,
-  },
-  // Axis: "Rs.750 debited from Axis Bank a/c XX6789 for UPI/ZOMATO on 01-Mar-26"
-  {
-    regex: /Rs\.?\s*([\d,]+(?:\.\d{1,2})?)\s+debited\s+from\s+.+?a\/c\s+[Xx*]+(\d{4})(?:.*?(?:UPI\/)?([A-Z0-9@._-]+?))?(?:\s+on|\s*\.|$)/i,
-    type: 'debit',
-    amountGroup: 1,
-    accountGroup: 2,
     merchantGroup: 3,
   },
   // Kotak: "Spent INR 3500 On Kotak Debit Card ending 4321. Merchant: BIGBASKET"
@@ -69,15 +75,9 @@ const PATTERNS: SmsPattern[] = [
     accountGroup: 2,
     merchantGroup: 3,
   },
-  // Generic credit: "Rs.200 credited to A/c **1234" or "INR 200 credited"
+  // Generic debit fallback
   {
-    regex: /(?:Rs\.?|INR)\s*([\d,]+(?:\.\d{1,2})?)\s+credited/i,
-    type: 'credit',
-    amountGroup: 1,
-  },
-  // Generic debit fallback: "debited Rs 500" or "debit of INR 500"
-  {
-    regex: /debit(?:ed)?\s+(?:of\s+)?(?:Rs\.?|INR)\s*([\d,]+(?:\.\d{1,2})?)/i,
+    regex: /debit(?:ed)?\s+(?:for\s+)?(?:of\s+)?(?:Rs\.?|INR)\s*([\d,]+(?:\.\d{1,2})?)/i,
     type: 'debit',
     amountGroup: 1,
   },
@@ -93,7 +93,7 @@ const PATTERNS: SmsPattern[] = [
 export const BANK_SENDER_PREFIXES = [
   'ICICIB', 'ICICIT', 'HDFCBK', 'SBIINB', 'SBISMS', 'AXISBK',
   'KOTAKB', 'INDBNK', 'YESBNK', 'PNBSMS', 'BOIIND', 'CENTBK',
-  'CANBNK', 'UNIONB', 'IDBIBK',
+  'CANBNK', 'UNIONB', 'IDBIBK', 'FEDBNK', 'FEDBK',
 ];
 
 /** Return true if the sender address looks like a bank transaction alert */

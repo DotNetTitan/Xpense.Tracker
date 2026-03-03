@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "xpensetracker",
     "userInterfaceStyle": "light",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": false
     },
@@ -45,6 +45,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "02a91f23-fb01-4edd-a00e-be21b6c50d4e"
+      }
     }
   }
 }

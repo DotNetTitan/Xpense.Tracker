@@ -44,10 +44,17 @@ export async function fetchAndParseBankSMS(daysBack = 90): Promise<Transaction[]
   // Dynamically import to avoid crashing in Expo Go
   let SmsAndroid: any;
   try {
-    SmsAndroid = require('react-native-get-sms-android').default;
+    const mod = require('react-native-get-sms-android');
+    SmsAndroid = mod.default ?? mod;
   } catch {
     throw new Error(
       'react-native-get-sms-android is not available. Make sure you are running a dev build, not Expo Go.'
+    );
+  }
+
+  if (!SmsAndroid?.list) {
+    throw new Error(
+      'SmsAndroid.list is not available. Make sure the native module is linked (dev build required).'
     );
   }
 
