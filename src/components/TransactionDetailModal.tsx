@@ -17,7 +17,7 @@ import {
 } from '../hooks/useTransactions';
 import { Transaction } from '../types';
 import { CATEGORIES } from '../utils/categories';
-import { formatCurrency, formatDate, normalizeBankName } from '../utils/formatters';
+import { formatCurrency, formatDate, normalizeBankName, normalizeMerchantName } from '../utils/formatters';
 
 interface Props {
   transaction: Transaction | null;
@@ -96,7 +96,7 @@ export function TransactionDetailModal({ transaction, onClose }: Props) {
             <DetailRow
               icon="store"
               label="Merchant"
-              value={merchant || '—'}
+              value={merchant ? normalizeMerchantName(merchant) : '—'}
             />
             <Divider />
             <DetailRow

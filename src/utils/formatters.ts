@@ -60,6 +60,71 @@ export function normalizeBankName(raw: string): string {
 }
 
 /**
+ * Well-known brand overrides — maps messy parsed names to clean display names.
+ * Add entries here whenever a merchant shows up with an ugly parsed name.
+ */
+const MERCHANT_NAME_OVERRIDES: Record<string, string> = {
+  swiggy: 'Swiggy',
+  zomato: 'Zomato',
+  amazon: 'Amazon',
+  flipkart: 'Flipkart',
+  myntra: 'Myntra',
+  ajio: 'AJIO',
+  nykaa: 'Nykaa',
+  meesho: 'Meesho',
+  netflix: 'Netflix',
+  spotify: 'Spotify',
+  hotstar: 'Hotstar',
+  youtube: 'YouTube',
+  uber: 'Uber',
+  ola: 'Ola',
+  rapido: 'Rapido',
+  irctc: 'IRCTC',
+  makemytrip: 'MakeMyTrip',
+  goibibo: 'Goibibo',
+  bigbasket: 'BigBasket',
+  blinkit: 'Blinkit',
+  zepto: 'Zepto',
+  dmart: 'DMart',
+  udemy: 'Udemy',
+  coursera: 'Coursera',
+  bookmyshow: 'BookMyShow',
+  groww: 'Groww',
+  zerodha: 'Zerodha',
+  phonepe: 'PhonePe',
+  paytm: 'Paytm',
+  gpay: 'Google Pay',
+};
+
+/** Legal / noise suffixes to strip from merchant names. */
+const MERCHANT_SUFFIX_RE =
+  /\s*\b(private\s+limited|pvt\.?\s*ltd\.?|limited|ltd\.?|inc\.?|llp|llc|technologies|technology|tech|solutions|solution|services|service|payments|payment|merchants?|india|digital|online|platforms?|enterprises?|ventures?|networks?|systems?)\b.*$/gi;
+
+/**
+ * Clean up a raw parsed merchant name.
+ * - Strips legal suffixes ("Swiggy Limited" → "Swiggy")
+ * - Applies known-brand overrides for consistent capitalisation
+ * - Title-cases anything that isn't a known override
+ */
+export function normalizeMerchantName(raw: string): string {
+  if (!raw) return raw;
+
+  // Strip legal suffixes
+  const stripped = raw.replace(MERCHANT_SUFFIX_RE, '').trim();
+
+  // Check against known-brand overrides (case-insensitive)
+  const lower = stripped.toLowerCase();
+  for (const [key, display] of Object.entries(MERCHANT_NAME_OVERRIDES)) {
+    if (lower === key || lower.startsWith(key)) return display;
+  }
+
+  // Title-case the remainder
+  return stripped
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/**
  * Return a "YYYY-MM" string from a Date or timestamp.
  */
 export function toMonthKey(dateOrTs: Date | number): string {

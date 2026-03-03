@@ -21,7 +21,7 @@ import { formatCurrency } from '../../src/utils/formatters';
 
 export default function DashboardScreen() {
   const { selectedMonth, setSelectedMonth } = useFilterStore();
-  const { data: transactions = [], isLoading, refetch } = useTransactions();
+  const { data: transactions = [], isLoading, refetch } = useTransactions('All');
   const { data: categoryTotals = [] } = useCategoryTotals();
   const { data: txCount = 0 } = useTransactionCount();
   const { sync, status, result, error, reset } = useSmsSync();

@@ -11,12 +11,14 @@ import { useFilterStore } from '../store/filterStore';
 import { CategoryTotal, MonthlyTotal } from '../types';
 import { CATEGORIES } from '../utils/categories';
 
-/** Fetch transactions for the current selected month and category filter. */
-export function useTransactions() {
+/** Fetch transactions for the current selected month and category filter.
+ * Pass `category` to override the store value (e.g. Dashboard always passes 'All'). */
+export function useTransactions(category?: string) {
   const { selectedMonth, selectedCategory } = useFilterStore();
+  const activeCategory = category ?? selectedCategory;
   return useQuery({
-    queryKey: ['transactions', selectedMonth, selectedCategory],
-    queryFn: () => getTransactions(selectedMonth, selectedCategory),
+    queryKey: ['transactions', selectedMonth, activeCategory],
+    queryFn: () => getTransactions(selectedMonth, activeCategory),
   });
 }
 

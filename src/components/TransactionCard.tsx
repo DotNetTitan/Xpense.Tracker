@@ -4,7 +4,7 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Surface, Text } from 'react-native-paper';
 import { Transaction } from '../types';
 import { CATEGORIES } from '../utils/categories';
-import { formatCurrency, formatDate, normalizeBankName } from '../utils/formatters';
+import { formatCurrency, formatDate, normalizeBankName, normalizeMerchantName } from '../utils/formatters';
 
 interface Props {
   transaction: Transaction;
@@ -30,7 +30,7 @@ export function TransactionCard({ transaction, onPress }: Props) {
       {/* Details */}
       <View style={styles.details}>
         <Text style={styles.merchant} numberOfLines={1}>
-          {merchant || normalizeBankName(bank)}
+          {merchant ? normalizeMerchantName(merchant) : normalizeBankName(bank)}
         </Text>
         <Text style={styles.meta}>
           {category} · {formatDate(date)}

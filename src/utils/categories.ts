@@ -1,6 +1,8 @@
 import { Category } from '../types';
 
 export const CATEGORIES: Record<string, Category> = {
+  Swiggy: { name: 'Swiggy', color: '#FC8019', icon: 'delivery-dining' },
+  Zomato: { name: 'Zomato', color: '#E23744', icon: 'delivery-dining' },
   Food: { name: 'Food', color: '#FF6B6B', icon: 'restaurant' },
   Transport: { name: 'Transport', color: '#FFB347', icon: 'directions-car' },
   Shopping: { name: 'Shopping', color: '#4FC3F7', icon: 'shopping-bag' },
@@ -25,8 +27,11 @@ export const CATEGORIES: Record<string, Category> = {
  *   service names to avoid false positives on generic SMS words.
  */
 const MERCHANT_KEYWORDS: Array<{ keywords: string[]; category: string }> = [
+  // Brand-specific — must come before generic Food to take priority
+  { keywords: ['swiggy'], category: 'Swiggy' },
+  { keywords: ['zomato'], category: 'Zomato' },
   {
-    keywords: ['swiggy', 'zomato', 'mcdonald', 'kfc', 'pizza', 'burger', 'cafe', 'restaurant', 'food', 'domino', 'subway', 'dunkin', 'starbucks'],
+    keywords: ['mcdonald', 'kfc', 'pizza', 'burger', 'cafe', 'restaurant', 'food', 'domino', 'subway', 'dunkin', 'starbucks'],
     category: 'Food',
   },
   {
@@ -72,7 +77,9 @@ const MERCHANT_KEYWORDS: Array<{ keywords: string[]; category: string }> = [
  * Only include proper nouns / brand names — never generic English words.
  */
 const SMS_KEYWORDS: Array<{ keywords: string[]; category: string }> = [
-  { keywords: ['swiggy', 'zomato', 'mcdonald', 'dominos', 'starbucks', 'kfc'], category: 'Food' },
+  { keywords: ['swiggy'], category: 'Swiggy' },
+  { keywords: ['zomato'], category: 'Zomato' },
+  { keywords: ['mcdonald', 'dominos', 'starbucks', 'kfc'], category: 'Food' },
   { keywords: ['uber', 'ola cabs', 'rapido', 'redbus', 'irctc'], category: 'Transport' },
   { keywords: ['amazon', 'flipkart', 'myntra', 'ajio', 'nykaa', 'meesho'], category: 'Shopping' },
   { keywords: ['netflix', 'hotstar', 'spotify', 'bookmyshow', 'pvr cinemas', 'inox', 'google play', 'apple music', 'apple tv', 'zee5', 'sonyliv', 'jiocinema', 'discord', 'playstation', 'xbox game'], category: 'Entertainment' },
@@ -105,5 +112,5 @@ export function categorizeTransaction(merchant?: string, rawSms?: string): strin
     }
   }
 
-  return 'Uncategorized';
+  return 'Finance';
 }
