@@ -6,7 +6,7 @@ import React, { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { MD3LightTheme, PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { initDb } from '../src/services/db.service';
+import { deduplicateExistingTransactions, initDb } from '../src/services/db.service';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,8 +32,10 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   useEffect(() => {
-    // Initialize SQLite database on startup
+    // Initialize SQLite database on startup, then clean up any cross-source duplicates
+    // (e.g. an Uber email receipt + the matching UPI bank SMS debit).
     initDb();
+    deduplicateExistingTransactions();
   }, []);
 
   return (

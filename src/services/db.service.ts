@@ -66,12 +66,44 @@ export function insertTransaction(tx: Transaction): void {
   );
 }
 
-/** Bulk-insert an array of transactions (dedup via sms_id). Returns the number of rows actually inserted. */
+/** Bulk-insert an array of transactions (dedup via sms_id). Returns the number of rows actually inserted.
+ *
+ * For SMS debit rows, checks whether a matching email transaction already exists
+ * (within ±10 minutes, SMS amount within [email amount, email amount + ₹100]).
+ * If found: updates the email row's amount to the SMS amount (what was actually paid),
+ * and sets the email's merchant/category on that row, then skips inserting again.
+ * This means the SMS amount (actual debit) is always the recorded figure.
+ */
 export function bulkInsertTransactions(txs: Transaction[]): number {
   const database = getDb();
+  const WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+  const TOLERANCE = 100;             // max ₹ the SMS can exceed the email amount
   let inserted = 0;
   database.withTransactionSync(() => {
     for (const tx of txs) {
+      // For SMS debit rows, check if a richer email row already covers this payment.
+      if ((tx.source ?? 'sms') === 'sms' && tx.type === 'debit') {
+        const existing = database.getFirstSync<{ id: string }>(
+          `SELECT id FROM transactions
+           WHERE ABS(date - ?) < ?
+             AND amount <= ?
+             AND amount >= ? - ?
+             AND type = 'debit'
+             AND source = 'email'
+           LIMIT 1`,
+          [tx.date, WINDOW_MS, tx.amount, tx.amount, TOLERANCE]
+        );
+        if (existing) {
+          // Update the email row to reflect the real paid amount from the SMS.
+          // Merchant/category from the email are already correct — keep them.
+          database.runSync(
+            `UPDATE transactions SET amount = ? WHERE id = ?`,
+            [tx.amount, existing.id]
+          );
+          continue; // don't insert a redundant SMS row
+        }
+      }
+
       const result = database.runSync(
         `INSERT OR IGNORE INTO transactions
            (id, amount, type, merchant, bank, account, category, date, raw_sms, sms_id, source)
@@ -97,28 +129,45 @@ export function bulkInsertTransactions(txs: Transaction[]): number {
 }
 
 /**
- * For each email-sourced transaction, delete any matching SMS row (same debit amount
- * within ±4 hours) then INSERT OR IGNORE the email row.  Returns the count of new rows.
+ * For each email-sourced transaction, check if a matching SMS row already exists.
+ * If yes: enrich the SMS row with the email's merchant name and category (the SMS
+ * amount — what was actually paid — is preserved), then skip inserting the email row.
+ * If no: insert the email row normally so the ride is still recorded.
  *
- * The ±4-hour window is tight enough to avoid collisions between separate same-day
- * trips of the same fare while still catching the UPI debit that arrives minutes
- * after the Uber receipt email.
+ * Matching criteria (tuned for Uber UPI payments):
+ *   - Within ±10 minutes of the email timestamp
+ *   - SMS debit amount is between the email amount and email amount + ₹100
+ *     (covers GPay rounding, small tips, or surge differences paid via UPI)
+ *   - Both are debit transactions
  */
 export function replaceWithEmailBatch(txs: Transaction[]): number {
   const database = getDb();
-  const WINDOW_MS = 4 * 60 * 60 * 1000; // 4 hours
+  const WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+  const TOLERANCE = 100;             // max ₹ the SMS can exceed the email amount
   let inserted = 0;
   database.withTransactionSync(() => {
     for (const tx of txs) {
-      // Remove the matching SMS-sourced row so the richer email row wins
-      database.runSync(
-        `DELETE FROM transactions
+      // Look for a matching SMS row that represents the same real payment.
+      const matchingSms = database.getFirstSync<{ id: string }>(
+        `SELECT id FROM transactions
          WHERE ABS(date - ?) < ?
-           AND ABS(amount - ?) < 0.01
+           AND amount >= ?
+           AND amount <= ? + ?
            AND type = 'debit'
-           AND (source = 'sms' OR source IS NULL)`,
-        [tx.date, WINDOW_MS, tx.amount]
+           AND (source = 'sms' OR source IS NULL)
+         LIMIT 1`,
+        [tx.date, WINDOW_MS, tx.amount, tx.amount, TOLERANCE]
       );
+
+      if (matchingSms) {
+        // SMS row exists: patch it with the meaningful merchant name and category
+        // from the email receipt, but keep the SMS amount (actual debit).
+        database.runSync(
+          `UPDATE transactions SET merchant = ?, category = ?, bank = ? WHERE id = ?`,
+          [tx.merchant ?? null, tx.category, tx.bank, matchingSms.id]
+        );
+        continue; // don't insert a redundant email row
+      }
       const result = database.runSync(
         `INSERT OR IGNORE INTO transactions
            (id, amount, type, merchant, bank, account, category, date, raw_sms, sms_id, source)
@@ -212,6 +261,64 @@ export function getCategoryTotals(monthKey: string): { category: string; total: 
      ORDER BY total DESC`,
     [start, end]
   );
+}
+
+/**
+ * One-time reconciliation run on app startup.
+ *
+ * For each existing email debit row, finds the matching SMS row (same ±10 min window,
+ * SMS amount within [email amount, email amount + ₹100]).
+ * If found:
+ *   - Updates the SMS row with the email's merchant name and category.
+ *   - Deletes the email row (the SMS amount — actual debit — is what we keep).
+ * If not found: leaves the email row untouched.
+ *
+ * Safe to call every startup — it is idempotent once email rows are cleaned up.
+ */
+export function deduplicateExistingTransactions(): void {
+  const database = getDb();
+  const WINDOW_MS = 10 * 60 * 1000;
+  const TOLERANCE = 100;
+
+  const emailRows = database.getAllSync<{
+    id: string;
+    date: number;
+    amount: number;
+    merchant: string | null;
+    category: string;
+    bank: string;
+  }>(
+    `SELECT id, date, amount, merchant, category, bank
+     FROM transactions WHERE type = 'debit' AND source = 'email'`
+  );
+
+  if (emailRows.length === 0) return;
+
+  database.withTransactionSync(() => {
+    for (const emailRow of emailRows) {
+      const smsRow = database.getFirstSync<{ id: string }>(
+        `SELECT id FROM transactions
+         WHERE ABS(date - ?) < ?
+           AND amount >= ?
+           AND amount <= ? + ?
+           AND type = 'debit'
+           AND (source = 'sms' OR source IS NULL)
+         LIMIT 1`,
+        [emailRow.date, WINDOW_MS, emailRow.amount, emailRow.amount, TOLERANCE]
+      );
+
+      if (smsRow) {
+        // Enrich the SMS row with the meaningful merchant/category from the email.
+        database.runSync(
+          `UPDATE transactions SET merchant = ?, category = ?, bank = ? WHERE id = ?`,
+          [emailRow.merchant ?? null, emailRow.category, emailRow.bank, smsRow.id]
+        );
+        // Remove the email row — the SMS row now has the correct amount + metadata.
+        database.runSync(`DELETE FROM transactions WHERE id = ?`, [emailRow.id]);
+      }
+      // No SMS match → leave the email row as the sole record of this trip.
+    }
+  });
 }
 
 /** Delete a transaction by id. */

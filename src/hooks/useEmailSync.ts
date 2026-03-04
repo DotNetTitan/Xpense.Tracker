@@ -25,6 +25,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { GMAIL_CONFIG } from '../config/gmail';
 import { replaceWithEmailBatch } from '../services/db.service';
 import { fetchAndParseUberEmails } from '../services/gmail.service';
+import { useSyncStore } from '../store/syncStore';
 import { useInvalidateTransactions } from './useTransactions';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -49,6 +50,7 @@ export function useEmailSync() {
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const invalidate = useInvalidateTransactions();
+  const { acquire, release } = useSyncStore();
 
   // Configure the native Google Sign-In SDK and check existing session on mount.
   useEffect(() => {
@@ -65,17 +67,26 @@ export function useEmailSync() {
 
   const doSync = useCallback(
     async (daysBack: number) => {
-      setStatus('fetching');
-      // getTokens() returns a valid access token; the SDK auto-refreshes
-      // it if it has expired, so we never need to manage refresh tokens.
-      const { accessToken } = await GoogleSignin.getTokens();
-      const emails = await fetchAndParseUberEmails(accessToken, daysBack);
-      const inserted = replaceWithEmailBatch(emails);
-      await invalidate();
-      setResult({ imported: inserted, total: emails.length });
-      setStatus('done');
+      if (!acquire('email')) {
+        setError('SMS sync is already running. Please wait for it to finish.');
+        setStatus('error');
+        return;
+      }
+      try {
+        setStatus('fetching');
+        // getTokens() returns a valid access token; the SDK auto-refreshes
+        // it if it has expired, so we never need to manage refresh tokens.
+        const { accessToken } = await GoogleSignin.getTokens();
+        const emails = await fetchAndParseUberEmails(accessToken, daysBack);
+        const inserted = replaceWithEmailBatch(emails);
+        await invalidate();
+        setResult({ imported: inserted, total: emails.length });
+        setStatus('done');
+      } finally {
+        release();
+      }
     },
-    [invalidate],
+    [invalidate, acquire, release],
   );
 
   // ── Public API ────────────────────────────────────────────────────────────

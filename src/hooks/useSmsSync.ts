@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { bulkInsertTransactions } from '../services/db.service';
+import { useSyncStore } from '../store/syncStore';
 import {
     fetchAndParseBankSMS,
     hasSmsPermission,
@@ -19,10 +20,17 @@ export function useSmsSync() {
   const [result, setResult] = useState<SyncResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const invalidate = useInvalidateTransactions();
+  const { acquire, release } = useSyncStore();
 
   const sync = useCallback(async (daysBack = 365) => {
     setError(null);
     setResult(null);
+
+    if (!acquire('sms')) {
+      setError('Email sync is already running. Please wait for it to finish.');
+      setStatus('error');
+      return;
+    }
 
     try {
       // Check / request SMS permission
@@ -52,8 +60,10 @@ export function useSmsSync() {
     } catch (err: any) {
       setError(err?.message ?? 'An unknown error occurred.');
       setStatus('error');
+    } finally {
+      release();
     }
-  }, [invalidate]);
+  }, [invalidate, acquire, release]);
 
   const reset = useCallback(() => {
     setStatus('idle');
