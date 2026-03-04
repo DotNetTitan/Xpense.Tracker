@@ -20,7 +20,7 @@ export function useSmsSync() {
   const [error, setError] = useState<string | null>(null);
   const invalidate = useInvalidateTransactions();
 
-  const sync = useCallback(async (daysBack = 90) => {
+  const sync = useCallback(async (daysBack = 365) => {
     setError(null);
     setResult(null);
 

@@ -40,7 +40,7 @@ export async function hasSmsPermission(): Promise<boolean> {
  * NOTE: This function uses react-native-get-sms-android which only works
  *       in a dev build or production build — NOT in Expo Go.
  */
-export async function fetchAndParseBankSMS(daysBack = 90): Promise<Transaction[]> {
+export async function fetchAndParseBankSMS(daysBack = 365): Promise<Transaction[]> {
   // Dynamically import to avoid crashing in Expo Go
   let SmsAndroid: any;
   try {
@@ -59,54 +59,65 @@ export async function fetchAndParseBankSMS(daysBack = 90): Promise<Transaction[]
   }
 
   const minDate = Date.now() - daysBack * 24 * 60 * 60 * 1000;
+  const PAGE_SIZE = 500;
 
-  const filter = {
-    box: 'inbox',
-    minDate,
-    maxCount: 500,
-    indexFrom: 0,
-  };
+  // Helper to fetch one page of SMS
+  const fetchPage = (indexFrom: number): Promise<RawSms[]> =>
+    new Promise((res, rej) => {
+      const filter = {
+        box: 'inbox',
+        minDate,
+        maxCount: PAGE_SIZE,
+        indexFrom,
+      };
+      SmsAndroid.list(
+        JSON.stringify(filter),
+        (error: string) => rej(new Error(error)),
+        (_count: number, smsList: string) => {
+          try {
+            res(JSON.parse(smsList));
+          } catch {
+            res([]);
+          }
+        },
+      );
+    });
 
-  return new Promise((resolve, reject) => {
-    SmsAndroid.list(
-      JSON.stringify(filter),
-      (error: string) => reject(new Error(error)),
-      (_count: number, smsList: string) => {
-        let messages: RawSms[] = [];
-        try {
-          messages = JSON.parse(smsList);
-        } catch {
-          resolve([]);
-          return;
-        }
+  // Paginate until we get fewer results than PAGE_SIZE (i.e. last page)
+  const allMessages: RawSms[] = [];
+  let indexFrom = 0;
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const page = await fetchPage(indexFrom);
+    allMessages.push(...page);
+    if (page.length < PAGE_SIZE) break; // no more pages
+    indexFrom += PAGE_SIZE;
+  }
 
-        const transactions: Transaction[] = [];
+  const transactions: Transaction[] = [];
 
-        for (const msg of messages) {
-          // Filter to bank senders only
-          if (!isBankSender(msg.address)) continue;
+  for (const msg of allMessages) {
+    // Filter to bank senders only
+    if (!isBankSender(msg.address)) continue;
 
-          const parsed = parseBankSMS(msg.body);
-          if (!parsed) continue;
+    const parsed = parseBankSMS(msg.body);
+    if (!parsed) continue;
 
-          const category = categorizeTransaction(parsed.merchant, msg.body);
+    const category = categorizeTransaction(parsed.merchant, msg.body);
 
-          transactions.push({
-            id: `sms_${msg._id}`,
-            amount: parsed.amount,
-            type: parsed.type,
-            merchant: parsed.merchant,
-            bank: msg.address,
-            account: parsed.account,
-            category,
-            date: msg.date,
-            rawSms: msg.body,
-            smsId: String(msg._id),
-          });
-        }
+    transactions.push({
+      id: `sms_${msg._id}`,
+      amount: parsed.amount,
+      type: parsed.type,
+      merchant: parsed.merchant,
+      bank: msg.address,
+      account: parsed.account,
+      category,
+      date: msg.date,
+      rawSms: msg.body,
+      smsId: String(msg._id),
+    });
+  }
 
-        resolve(transactions);
-      }
-    );
-  });
+  return transactions;
 }

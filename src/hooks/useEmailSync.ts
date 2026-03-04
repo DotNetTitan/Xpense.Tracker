@@ -80,7 +80,7 @@ export function useEmailSync() {
 
   // ── Public API ────────────────────────────────────────────────────────────
 
-  /** Open the Google account picker, then immediately sync 90 days back. */
+  /** Open the Google account picker, then immediately sync 365 days back. */
   const connect = useCallback(async () => {
     setError(null);
     setResult(null);
@@ -96,7 +96,7 @@ export function useEmailSync() {
 
       if (isSuccessResponse(response)) {
         setIsConnected(true);
-        await doSync(90);
+        await doSync(365);
       }
     } catch (err: any) {
       if (isErrorWithCode(err) && err.code === statusCodes.IN_PROGRESS) {
@@ -113,7 +113,7 @@ export function useEmailSync() {
    * No-op if the user has never signed in.
    */
   const sync = useCallback(
-    async (daysBack = 90) => {
+    async (daysBack = 365) => {
       if (!isConnected) return;
       setError(null);
       setResult(null);

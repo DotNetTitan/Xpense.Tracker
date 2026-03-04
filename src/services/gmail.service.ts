@@ -73,7 +73,7 @@ function getHeader(part: GmailMessagePart, name: string): string {
  */
 export async function fetchAndParseUberEmails(
   accessToken: string,
-  daysBack = 90,
+  daysBack = 365,
 ): Promise<Transaction[]> {
   const afterDate = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000);
   const afterStr = `${afterDate.getFullYear()}/${String(afterDate.getMonth() + 1).padStart(2, '0')}/${String(afterDate.getDate()).padStart(2, '0')}`;
