@@ -15,11 +15,11 @@
  */
 
 import {
-    GoogleSignin,
-    isCancelledResponse,
-    isErrorWithCode,
-    isSuccessResponse,
-    statusCodes,
+  GoogleSignin,
+  isCancelledResponse,
+  isErrorWithCode,
+  isSuccessResponse,
+  statusCodes,
 } from '@react-native-google-signin/google-signin';
 import { useCallback, useEffect, useState } from 'react';
 import { GMAIL_CONFIG } from '../config/gmail';

@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react';
 import { bulkInsertTransactions } from '../services/db.service';
-import { useSyncStore } from '../store/syncStore';
 import {
     fetchAndParseBankSMS,
     hasSmsPermission,
     requestSmsPermission,
 } from '../services/sms.service';
+import { useSyncStore } from '../store/syncStore';
 import { useInvalidateTransactions } from './useTransactions';
 
 export type SyncStatus = 'idle' | 'requesting_permission' | 'fetching' | 'done' | 'error';
