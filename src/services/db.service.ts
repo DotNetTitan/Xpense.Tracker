@@ -24,12 +24,23 @@ export function initDb(): void {
       category TEXT DEFAULT 'Uncategorized',
       date INTEGER NOT NULL,
       raw_sms TEXT,
-      sms_id TEXT UNIQUE
+      sms_id TEXT UNIQUE,
+      source TEXT DEFAULT 'sms'
     );
     CREATE INDEX IF NOT EXISTS idx_date ON transactions(date);
     CREATE INDEX IF NOT EXISTS idx_category ON transactions(category);
     CREATE INDEX IF NOT EXISTS idx_type ON transactions(type);
   `);
+  // Run migrations for existing databases (add columns added after initial release)
+  migrateDb(database);
+}
+
+function migrateDb(database: SQLite.SQLiteDatabase): void {
+  try {
+    database.execSync(`ALTER TABLE transactions ADD COLUMN source TEXT DEFAULT 'sms'`);
+  } catch {
+    // Column already exists — no-op
+  }
 }
 
 /** Insert a transaction, silently ignoring duplicates (based on sms_id). */
@@ -37,8 +48,8 @@ export function insertTransaction(tx: Transaction): void {
   const database = getDb();
   database.runSync(
     `INSERT OR IGNORE INTO transactions
-       (id, amount, type, merchant, bank, account, category, date, raw_sms, sms_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, amount, type, merchant, bank, account, category, date, raw_sms, sms_id, source)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       tx.id,
       tx.amount,
@@ -50,6 +61,7 @@ export function insertTransaction(tx: Transaction): void {
       tx.date,
       tx.rawSms,
       tx.smsId,
+      tx.source ?? 'sms',
     ]
   );
 }
@@ -62,8 +74,8 @@ export function bulkInsertTransactions(txs: Transaction[]): number {
     for (const tx of txs) {
       const result = database.runSync(
         `INSERT OR IGNORE INTO transactions
-           (id, amount, type, merchant, bank, account, category, date, raw_sms, sms_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           (id, amount, type, merchant, bank, account, category, date, raw_sms, sms_id, source)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           tx.id,
           tx.amount,
@@ -75,6 +87,54 @@ export function bulkInsertTransactions(txs: Transaction[]): number {
           tx.date,
           tx.rawSms,
           tx.smsId,
+          tx.source ?? 'sms',
+        ]
+      );
+      inserted += result.changes;
+    }
+  });
+  return inserted;
+}
+
+/**
+ * For each email-sourced transaction, delete any matching SMS row (same debit amount
+ * within ±4 hours) then INSERT OR IGNORE the email row.  Returns the count of new rows.
+ *
+ * The ±4-hour window is tight enough to avoid collisions between separate same-day
+ * trips of the same fare while still catching the UPI debit that arrives minutes
+ * after the Uber receipt email.
+ */
+export function replaceWithEmailBatch(txs: Transaction[]): number {
+  const database = getDb();
+  const WINDOW_MS = 4 * 60 * 60 * 1000; // 4 hours
+  let inserted = 0;
+  database.withTransactionSync(() => {
+    for (const tx of txs) {
+      // Remove the matching SMS-sourced row so the richer email row wins
+      database.runSync(
+        `DELETE FROM transactions
+         WHERE ABS(date - ?) < ?
+           AND ABS(amount - ?) < 0.01
+           AND type = 'debit'
+           AND (source = 'sms' OR source IS NULL)`,
+        [tx.date, WINDOW_MS, tx.amount]
+      );
+      const result = database.runSync(
+        `INSERT OR IGNORE INTO transactions
+           (id, amount, type, merchant, bank, account, category, date, raw_sms, sms_id, source)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          tx.id,
+          tx.amount,
+          tx.type,
+          tx.merchant ?? null,
+          tx.bank,
+          tx.account ?? null,
+          tx.category,
+          tx.date,
+          tx.rawSms,
+          tx.smsId,
+          'email',
         ]
       );
       inserted += result.changes;
@@ -187,5 +247,6 @@ function rowToTransaction(row: any): Transaction {
     date: row.date,
     rawSms: row.raw_sms ?? '',
     smsId: row.sms_id,
+    source: (row.source as 'sms' | 'email') ?? 'sms',
   };
 }

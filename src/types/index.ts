@@ -8,7 +8,8 @@ export interface Transaction {
   category: string;
   date: number; // Unix timestamp (ms)
   rawSms: string;
-  smsId: string; // unique per SMS, prevents duplicate imports
+  smsId: string; // unique per SMS/email, prevents duplicate imports
+  source?: 'sms' | 'email'; // origin of the transaction
 }
 
 export interface Category {

@@ -12,6 +12,7 @@ import { EmptyState } from '../../src/components/EmptyState';
 import { MonthPicker } from '../../src/components/MonthPicker';
 import { TransactionCard } from '../../src/components/TransactionCard';
 import { TransactionDetailModal } from '../../src/components/TransactionDetailModal';
+import { useEmailSync } from '../../src/hooks/useEmailSync';
 import { useSmsSync } from '../../src/hooks/useSmsSync';
 import { useCategoryTotals, useTransactionCount, useTransactions } from '../../src/hooks/useTransactions';
 import { useFilterStore } from '../../src/store/filterStore';
@@ -25,6 +26,7 @@ export default function DashboardScreen() {
   const { data: categoryTotals = [] } = useCategoryTotals();
   const { data: txCount = 0 } = useTransactionCount();
   const { sync, status, result, error, reset } = useSmsSync();
+  const emailSync = useEmailSync();
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const hasSyncedOnMount = useRef(false);
 
@@ -33,7 +35,10 @@ export default function DashboardScreen() {
     if (hasSyncedOnMount.current) return;
     hasSyncedOnMount.current = true;
     sync();
-  }, [sync]);
+    // Auto-sync Gmail too if already connected (no prompt needed)
+    emailSync.sync();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const totalSpent = transactions
     .filter((t) => t.type === 'debit')
@@ -44,8 +49,17 @@ export default function DashboardScreen() {
     .reduce((sum, t) => sum + t.amount, 0);
 
   const recentTransactions = transactions.slice(0, 5);
-  const top3Categories = categoryTotals.slice(0, 3);
+
+  // Pinned brand cards — always show these three regardless of rank
+  const BRAND_CATEGORIES = ['Swiggy', 'Zomato', 'Uber'] as const;
+  const brandTotals = BRAND_CATEGORIES.map((name) => ({
+    category: name,
+    total: categoryTotals.find((c) => c.category === name)?.total ?? 0,
+    ...(CATEGORIES[name] ?? CATEGORIES.Uncategorized),
+  }));
   const isSyncing = status === 'fetching' || status === 'requesting_permission';
+  const isEmailSyncing =
+    emailSync.status === 'fetching' || emailSync.status === 'requesting_auth';
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -88,28 +102,23 @@ export default function DashboardScreen() {
           {transactions.length} transaction{transactions.length !== 1 ? 's' : ''} this month
         </Text>
 
-        {/* Top Categories */}
-        {top3Categories.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Top Categories</Text>
-            <View style={styles.categoriesRow}>
-              {top3Categories.map((cat) => {
-                const catDef = CATEGORIES[cat.category] ?? CATEGORIES.Uncategorized;
-                return (
-                  <Surface key={cat.category} style={styles.catCard} elevation={1}>
-                    <View style={[styles.catIcon, { backgroundColor: catDef.color + '22' }]}>
-                      <MaterialIcons name={catDef.icon as any} size={20} color={catDef.color} />
-                    </View>
-                    <Text style={styles.catName} numberOfLines={1}>{cat.category}</Text>
-                    <Text style={[styles.catAmount, { color: catDef.color }]}>
-                      {formatCurrency(cat.total)}
-                    </Text>
-                  </Surface>
-                );
-              })}
-            </View>
+        {/* Pinned brand cards: Swiggy · Zomato · Uber */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Food & Rides</Text>
+          <View style={styles.categoriesRow}>
+            {brandTotals.map((brand) => (
+              <Surface key={brand.category} style={styles.catCard} elevation={1}>
+                <View style={[styles.catIcon, { backgroundColor: brand.color + '22' }]}>
+                  <MaterialIcons name={brand.icon as any} size={20} color={brand.color} />
+                </View>
+                <Text style={styles.catName} numberOfLines={1}>{brand.category}</Text>
+                <Text style={[styles.catAmount, { color: brand.color }]}>
+                  {brand.total > 0 ? formatCurrency(brand.total) : '—'}
+                </Text>
+              </Surface>
+            ))}
           </View>
-        )}
+        </View>
 
         {/* Recent Transactions */}
         <View style={styles.section}>
@@ -139,7 +148,31 @@ export default function DashboardScreen() {
         onClose={() => setSelectedTx(null)}
       />
 
-      {/* Sync FAB */}
+      {/* Gmail FAB — sits above the SMS FAB */}
+      <FAB
+        icon={emailSync.isConnected ? 'email-sync' : 'email-plus'}
+        label={
+          isEmailSyncing
+            ? 'Syncing Gmail…'
+            : emailSync.isConnected
+            ? 'Sync Gmail'
+            : 'Connect Gmail'
+        }
+        style={styles.fabGmail}
+        color="#fff"
+        onPress={() => {
+          if (isEmailSyncing) return;
+          if (emailSync.isConnected) {
+            emailSync.sync();
+          } else {
+            emailSync.connect();
+          }
+        }}
+        loading={isEmailSyncing}
+        disabled={isEmailSyncing}
+      />
+
+      {/* SMS Sync FAB */}
       <FAB
         icon="sync"
         label={isSyncing ? 'Syncing…' : 'Sync SMS'}
@@ -150,7 +183,22 @@ export default function DashboardScreen() {
         disabled={isSyncing}
       />
 
-      {/* Snackbar */}
+      {/* Gmail sync snackbar */}
+      <Snackbar
+        visible={emailSync.status === 'done' || emailSync.status === 'error'}
+        onDismiss={emailSync.reset}
+        duration={4000}
+        style={emailSync.status === 'error' ? styles.snackError : styles.snackSuccess}
+        wrapperStyle={styles.snackEmailWrapper}
+      >
+        {emailSync.status === 'done'
+          ? emailSync.result?.imported === 0
+            ? `Uber: ${emailSync.result.total} already synced`
+            : `Uber: imported ${emailSync.result?.imported} of ${emailSync.result?.total} found`
+          : emailSync.error ?? 'Gmail sync failed'}
+      </Snackbar>
+
+      {/* SMS sync snackbar */}
       <Snackbar
         visible={status === 'done' || status === 'error'}
         onDismiss={reset}
@@ -231,6 +279,13 @@ const styles = StyleSheet.create({
   },
   catName: { fontSize: 11, color: '#444', fontWeight: '600', textAlign: 'center' },
   catAmount: { fontSize: 12, fontWeight: '700' },
+  fabGmail: {
+    position: 'absolute',
+    right: 20,
+    bottom: 148,
+    backgroundColor: '#DB4437',
+    borderRadius: 28,
+  },
   fab: {
     position: 'absolute',
     right: 20,
@@ -238,6 +293,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1565C0',
     borderRadius: 28,
   },
+  snackEmailWrapper: { bottom: 60 },
   snackSuccess: { backgroundColor: '#2E7D32' },
   snackError: { backgroundColor: '#C62828' },
 });
