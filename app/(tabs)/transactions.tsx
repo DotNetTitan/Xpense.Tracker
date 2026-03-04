@@ -7,18 +7,18 @@ import {
 } from 'react-native';
 import { ActivityIndicator, Chip, Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppColors } from '../../constants/theme';
+import { useAppColors } from '../../hooks/use-app-colors';
 import { EmptyState } from '../../src/components/EmptyState';
 import { MonthPicker } from '../../src/components/MonthPicker';
+import { ThemeToggle } from '../../src/components/ThemeToggle';
 import { TransactionCard } from '../../src/components/TransactionCard';
 import { TransactionDetailModal } from '../../src/components/TransactionDetailModal';
 import { useTransactions } from '../../src/hooks/useTransactions';
 import { useFilterStore } from '../../src/store/filterStore';
-import { ThemeToggle } from '../../src/components/ThemeToggle';
 import { Transaction } from '../../src/types';
 import { CATEGORIES } from '../../src/utils/categories';
 import { formatDate } from '../../src/utils/formatters';
-import { AppColors } from '../../constants/theme';
-import { useAppColors } from '../../hooks/use-app-colors';
 
 const ALL_CATEGORIES = ['All', ...Object.keys(CATEGORIES)];
 

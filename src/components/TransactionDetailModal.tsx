@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppColors } from '../../constants/theme';
+import { useAppColors } from '../../hooks/use-app-colors';
 import {
     useDeleteTransaction,
     useUpdateTransactionCategory,
@@ -18,8 +20,6 @@ import {
 import { Transaction } from '../types';
 import { CATEGORIES } from '../utils/categories';
 import { formatCurrency, formatDate, normalizeBankName, normalizeMerchantName } from '../utils/formatters';
-import { AppColors } from '../../constants/theme';
-import { useAppColors } from '../../hooks/use-app-colors';
 
 interface Props {
   transaction: Transaction | null;

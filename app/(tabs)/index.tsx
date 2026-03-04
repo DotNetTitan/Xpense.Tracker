@@ -1,27 +1,27 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  View,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    View,
 } from 'react-native';
 import { ActivityIndicator, FAB, Snackbar, Surface, Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppColors } from '../../constants/theme';
+import { useAppColors } from '../../hooks/use-app-colors';
 import { EmptyState } from '../../src/components/EmptyState';
 import { MonthPicker } from '../../src/components/MonthPicker';
+import { ThemeToggle } from '../../src/components/ThemeToggle';
 import { TransactionCard } from '../../src/components/TransactionCard';
 import { TransactionDetailModal } from '../../src/components/TransactionDetailModal';
 import { useEmailSync } from '../../src/hooks/useEmailSync';
 import { useSmsSync } from '../../src/hooks/useSmsSync';
 import { useCategoryTotals, useTransactionCount, useTransactions } from '../../src/hooks/useTransactions';
 import { useFilterStore } from '../../src/store/filterStore';
-import { ThemeToggle } from '../../src/components/ThemeToggle';
 import { Transaction } from '../../src/types';
 import { CATEGORIES } from '../../src/utils/categories';
 import { formatCurrency } from '../../src/utils/formatters';
-import { AppColors } from '../../constants/theme';
-import { useAppColors } from '../../hooks/use-app-colors';
 
 export default function DashboardScreen() {
   const colors = useAppColors();

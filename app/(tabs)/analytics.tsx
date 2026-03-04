@@ -2,16 +2,16 @@ import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Surface, Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppColors } from '../../constants/theme';
+import { useAppColors } from '../../hooks/use-app-colors';
 import { EmptyState } from '../../src/components/EmptyState';
 import { MonthlyBarChart } from '../../src/components/MonthlyBarChart';
 import { MonthPicker } from '../../src/components/MonthPicker';
 import { SpendingDonutChart } from '../../src/components/SpendingDonutChart';
+import { ThemeToggle } from '../../src/components/ThemeToggle';
 import { useCategoryTotals, useMonthlyTotals } from '../../src/hooks/useTransactions';
 import { useFilterStore } from '../../src/store/filterStore';
-import { ThemeToggle } from '../../src/components/ThemeToggle';
 import { formatCurrency, monthLabel } from '../../src/utils/formatters';
-import { AppColors } from '../../constants/theme';
-import { useAppColors } from '../../hooks/use-app-colors';
 
 export default function AnalyticsScreen() {
   const colors = useAppColors();
