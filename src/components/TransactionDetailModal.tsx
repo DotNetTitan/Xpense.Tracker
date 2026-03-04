@@ -1,5 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     Alert,
     Modal,
@@ -18,6 +18,8 @@ import {
 import { Transaction } from '../types';
 import { CATEGORIES } from '../utils/categories';
 import { formatCurrency, formatDate, normalizeBankName, normalizeMerchantName } from '../utils/formatters';
+import { AppColors } from '../../constants/theme';
+import { useAppColors } from '../../hooks/use-app-colors';
 
 interface Props {
   transaction: Transaction | null;
@@ -28,6 +30,9 @@ export function TransactionDetailModal({ transaction, onClose }: Props) {
   const [showRawSms, setShowRawSms] = useState(false);
   const deleteMutation = useDeleteTransaction();
   const updateCategoryMutation = useUpdateTransactionCategory();
+
+  const colors = useAppColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   if (!transaction) return null;
 
@@ -72,7 +77,7 @@ export function TransactionDetailModal({ transaction, onClose }: Props) {
           <View style={styles.handleSpacer} />
           <View style={styles.handle} />
           <TouchableOpacity onPress={onClose} style={styles.closeBtn} hitSlop={16}>
-            <MaterialIcons name="close" size={22} color="#7B8B9A" />
+            <MaterialIcons name="close" size={22} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -140,7 +145,7 @@ export function TransactionDetailModal({ transaction, onClose }: Props) {
                   <MaterialIcons
                     name={info.icon as any}
                     size={16}
-                    color={isSelected ? info.color : '#7B8B9A'}
+                    color={isSelected ? info.color : colors.textSecondary}
                   />
                   <Text
                     style={[
@@ -165,7 +170,7 @@ export function TransactionDetailModal({ transaction, onClose }: Props) {
                 <MaterialIcons
                   name={showRawSms ? 'expand-less' : 'expand-more'}
                   size={18}
-                  color="#7B8B9A"
+                  color={colors.textSecondary}
                 />
                 <Text style={styles.rawSmsToggleLabel}>
                   {showRawSms ? 'Hide' : 'Show'} raw SMS
@@ -185,7 +190,7 @@ export function TransactionDetailModal({ transaction, onClose }: Props) {
             onPress={handleDelete}
             disabled={deleteMutation.isPending}
           >
-            <MaterialIcons name="delete-outline" size={20} color="#E53935" />
+            <MaterialIcons name="delete-outline" size={20} color={colors.debit} />
             <Text style={styles.deleteBtnLabel}>Delete Transaction</Text>
           </Pressable>
         </ScrollView>
@@ -203,11 +208,12 @@ function DetailRow({
   label: string;
   value: string;
 }) {
+  const colors = useAppColors();
   return (
-    <View style={styles.detailRow}>
-      <MaterialIcons name={icon as any} size={18} color="#7B8B9A" style={styles.detailIcon} />
-      <Text style={styles.detailLabel}>{label}</Text>
-      <Text style={styles.detailValue} numberOfLines={1}>
+    <View style={sharedStyles.detailRow}>
+      <MaterialIcons name={icon as any} size={18} color={colors.textSecondary} style={sharedStyles.detailIcon} />
+      <Text style={[sharedStyles.detailLabel, { color: colors.textSecondary }]}>{label}</Text>
+      <Text style={[sharedStyles.detailValue, { color: colors.textPrimary }]} numberOfLines={1}>
         {value}
       </Text>
     </View>
@@ -215,170 +221,159 @@ function DetailRow({
 }
 
 function Divider() {
-  return <View style={styles.divider} />;
+  const colors = useAppColors();
+  return <View style={[sharedStyles.divider, { backgroundColor: colors.divider }]} />;
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F4F7FB',
-  },
-  handleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 12,
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    zIndex: 1,
-  },
-  handleSpacer: {
-    width: 38, // same width as closeBtn to keep handle centered
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#D0D7E2',
-  },
-  closeBtn: {
-    width: 38,
-    height: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 19,
-    backgroundColor: '#E8EEF7',
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
-  },
-  heroSection: {
-    alignItems: 'center',
-    paddingVertical: 24,
-  },
-  heroIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  amount: {
-    fontSize: 32,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-  },
-  amountDebit: { color: '#E53935' },
-  amountCredit: { color: '#43A047' },
-  typeLabel: {
-    fontSize: 13,
-    color: '#7B8B9A',
-    marginTop: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    marginBottom: 20,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-  },
+/** Layout-only styles shared between DetailRow and Divider (no colors). */
+const sharedStyles = StyleSheet.create({
+  detailRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
   detailIcon: { marginRight: 12 },
-  detailLabel: {
-    fontSize: 14,
-    color: '#7B8B9A',
-    width: 76,
-  },
-  detailValue: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1a1a2e',
-    textAlign: 'right',
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#E8EEF7',
-    marginLeft: 30,
-  },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#7B8B9A',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 10,
-  },
-  categoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 20,
-  },
-  categoryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    borderWidth: 1.5,
-    borderColor: '#E8EEF7',
-  },
-  categoryChipLabel: {
-    fontSize: 13,
-    color: '#7B8B9A',
-  },
-  rawSmsToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 8,
-    alignSelf: 'flex-start',
-  },
-  rawSmsToggleLabel: {
-    fontSize: 13,
-    color: '#7B8B9A',
-  },
-  rawSmsBox: {
-    backgroundColor: '#E8EEF7',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 20,
-  },
-  rawSmsText: {
-    fontSize: 12,
-    color: '#555',
-    lineHeight: 18,
-  },
-  deleteBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: 8,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#FFCDD2',
-    backgroundColor: '#FFF5F5',
-  },
-  deleteBtnLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#E53935',
-  },
+  detailLabel: { fontSize: 14, width: 76 },
+  detailValue: { flex: 1, fontSize: 14, fontWeight: '600', textAlign: 'right' },
+  divider: { height: StyleSheet.hairlineWidth, marginLeft: 30 },
 });
+
+function createStyles(colors: AppColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.modalBg,
+    },
+    handleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingTop: 12,
+      paddingHorizontal: 16,
+      paddingBottom: 8,
+      zIndex: 1,
+    },
+    handleSpacer: {
+      width: 38,
+    },
+    handle: {
+      width: 36,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.dragHandle,
+    },
+    closeBtn: {
+      width: 38,
+      height: 38,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 19,
+      backgroundColor: colors.surfaceVariant,
+    },
+    scrollContent: {
+      paddingHorizontal: 16,
+      paddingBottom: 32,
+    },
+    heroSection: {
+      alignItems: 'center',
+      paddingVertical: 24,
+    },
+    heroIcon: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 16,
+    },
+    amount: {
+      fontSize: 32,
+      fontWeight: '800',
+      letterSpacing: -0.5,
+    },
+    amountDebit: { color: colors.debit },
+    amountCredit: { color: colors.credit },
+    typeLabel: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginTop: 4,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    card: {
+      backgroundColor: colors.cardBg,
+      borderRadius: 16,
+      paddingHorizontal: 16,
+      marginBottom: 20,
+      elevation: 1,
+      shadowColor: '#000',
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 2 },
+    },
+    sectionLabel: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginBottom: 10,
+    },
+    categoryGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+      marginBottom: 20,
+    },
+    categoryChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      borderRadius: 20,
+      backgroundColor: colors.cardBg,
+      borderWidth: 1.5,
+      borderColor: colors.divider,
+    },
+    categoryChipLabel: {
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    rawSmsToggle: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      marginBottom: 8,
+      alignSelf: 'flex-start',
+    },
+    rawSmsToggleLabel: {
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    rawSmsBox: {
+      backgroundColor: colors.rawSmsBg,
+      borderRadius: 10,
+      padding: 12,
+      marginBottom: 20,
+    },
+    rawSmsText: {
+      fontSize: 12,
+      color: colors.rawSmsText,
+      lineHeight: 18,
+    },
+    deleteBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      marginTop: 8,
+      paddingVertical: 14,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      borderColor: colors.deleteBorder,
+      backgroundColor: colors.deleteBg,
+    },
+    deleteBtnLabel: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.debit,
+    },
+  });
+}

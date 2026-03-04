@@ -1,7 +1,9 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Surface, Text } from 'react-native-paper';
+import { AppColors } from '../../constants/theme';
+import { useAppColors } from '../../hooks/use-app-colors';
 import { Transaction } from '../types';
 import { CATEGORIES } from '../utils/categories';
 import { formatCurrency, formatDate, normalizeBankName, normalizeMerchantName } from '../utils/formatters';
@@ -12,6 +14,8 @@ interface Props {
 }
 
 export function TransactionCard({ transaction, onPress }: Props) {
+  const colors = useAppColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { amount, type, merchant, category, date, bank } = transaction;
   const cat = CATEGORIES[category] ?? CATEGORIES.Uncategorized;
   const isDebit = type === 'debit';
@@ -46,47 +50,49 @@ export function TransactionCard({ transaction, onPress }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginHorizontal: 16,
-    marginVertical: 4,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-  },
-  iconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  details: {
-    flex: 1,
-  },
-  merchant: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1a1a2e',
-  },
-  meta: {
-    fontSize: 12,
-    color: '#7B8B9A',
-    marginTop: 2,
-  },
-  amount: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginLeft: 8,
-  },
-  debit: {
-    color: '#E53935',
-  },
-  credit: {
-    color: '#43A047',
-  },
-});
+function createStyles(colors: AppColors) {
+  return StyleSheet.create({
+    card: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      marginHorizontal: 16,
+      marginVertical: 4,
+      borderRadius: 12,
+      backgroundColor: colors.cardBg,
+    },
+    iconWrap: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    details: {
+      flex: 1,
+    },
+    merchant: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    meta: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    amount: {
+      fontSize: 15,
+      fontWeight: '700',
+      marginLeft: 8,
+    },
+    debit: {
+      color: colors.debit,
+    },
+    credit: {
+      color: colors.credit,
+    },
+  });
+}

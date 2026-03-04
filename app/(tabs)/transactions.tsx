@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     FlatList,
     RefreshControl,
@@ -13,9 +13,12 @@ import { TransactionCard } from '../../src/components/TransactionCard';
 import { TransactionDetailModal } from '../../src/components/TransactionDetailModal';
 import { useTransactions } from '../../src/hooks/useTransactions';
 import { useFilterStore } from '../../src/store/filterStore';
+import { ThemeToggle } from '../../src/components/ThemeToggle';
 import { Transaction } from '../../src/types';
 import { CATEGORIES } from '../../src/utils/categories';
 import { formatDate } from '../../src/utils/formatters';
+import { AppColors } from '../../constants/theme';
+import { useAppColors } from '../../hooks/use-app-colors';
 
 const ALL_CATEGORIES = ['All', ...Object.keys(CATEGORIES)];
 
@@ -30,6 +33,8 @@ function groupByDate(txs: Transaction[]): { date: string; items: Transaction[] }
 }
 
 export default function TransactionsScreen() {
+  const colors = useAppColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { selectedMonth, setSelectedMonth, selectedCategory, setSelectedCategory } =
     useFilterStore();
   const { data: transactions = [], isLoading, refetch } = useTransactions();
@@ -42,6 +47,7 @@ export default function TransactionsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Transactions</Text>
+        <ThemeToggle size={24} />
       </View>
 
       {/* Month Picker */}
@@ -76,7 +82,7 @@ export default function TransactionsScreen() {
 
       {/* Transaction List */}
       {isLoading ? (
-        <ActivityIndicator style={{ padding: 40 }} color="#1565C0" />
+        <ActivityIndicator style={{ padding: 40 }} color={colors.primary} />
       ) : grouped.length === 0 ? (
         <EmptyState
           title="No transactions"
@@ -115,45 +121,50 @@ export default function TransactionsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#F4F7FB' },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 4,
-  },
-  title: { fontSize: 22, fontWeight: '800', color: '#1a1a2e' },
-  filterRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 8,
-  },
-  filterChip: {
-    backgroundColor: '#E8EEF7',
-    borderRadius: 20,
-  },
-  filterChipActive: {
-    backgroundColor: '#1565C0',
-  },
-  filterChipText: {
-    color: '#444',
-    fontSize: 12,
-  },
-  filterChipTextActive: {
-    color: '#fff',
-    fontSize: 12,
-  },
-  listContent: {
-    paddingBottom: 32,
-  },
-  dateHeader: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#7B8B9A',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-});
+function createStyles(colors: AppColors) {
+  return StyleSheet.create({
+    safeArea: { flex: 1, backgroundColor: colors.pageBg },
+    header: {
+      paddingHorizontal: 20,
+      paddingTop: 12,
+      paddingBottom: 4,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    title: { fontSize: 22, fontWeight: '800', color: colors.textPrimary },
+    filterRow: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      gap: 8,
+    },
+    filterChip: {
+      backgroundColor: colors.filterChipBg,
+      borderRadius: 20,
+    },
+    filterChipActive: {
+      backgroundColor: colors.primary,
+    },
+    filterChipText: {
+      color: colors.textMuted,
+      fontSize: 12,
+    },
+    filterChipTextActive: {
+      color: '#fff',
+      fontSize: 12,
+    },
+    listContent: {
+      paddingBottom: 32,
+    },
+    dateHeader: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.textSecondary,
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 4,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+  });
+}

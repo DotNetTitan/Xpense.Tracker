@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { BarChart } from 'react-native-gifted-charts';
 import { Text } from 'react-native-paper';
+import { AppColors } from '../../constants/theme';
+import { useAppColors } from '../../hooks/use-app-colors';
 import { MonthlyTotal } from '../types';
 import { formatCurrency, monthLabel } from '../utils/formatters';
 
@@ -10,6 +12,9 @@ interface Props {
 }
 
 export function MonthlyBarChart({ data }: Props) {
+  const colors = useAppColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   if (data.length === 0) {
     return (
       <View style={styles.empty}>
@@ -21,7 +26,7 @@ export function MonthlyBarChart({ data }: Props) {
   const barData = data.map((d, i) => ({
     value: d.total,
     label: monthLabel(d.month),
-    frontColor: i === data.length - 1 ? '#1565C0' : '#90CAF9',
+    frontColor: i === data.length - 1 ? colors.primary : colors.barInactive,
     topLabelComponent: () =>
       d.total > 0 ? (
         <Text style={styles.barTopLabel}>
@@ -53,29 +58,31 @@ export function MonthlyBarChart({ data }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    paddingVertical: 8,
-  },
-  barTopLabel: {
-    fontSize: 9,
-    color: '#7B8B9A',
-    marginBottom: 2,
-  },
-  xLabel: {
-    color: '#7B8B9A',
-    fontSize: 11,
-  },
-  yLabel: {
-    color: '#7B8B9A',
-    fontSize: 10,
-  },
-  empty: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  emptyText: {
-    color: '#7B8B9A',
-    fontSize: 14,
-  },
-});
+function createStyles(colors: AppColors) {
+  return StyleSheet.create({
+    container: {
+      paddingVertical: 8,
+    },
+    barTopLabel: {
+      fontSize: 9,
+      color: colors.textSecondary,
+      marginBottom: 2,
+    },
+    xLabel: {
+      color: colors.textSecondary,
+      fontSize: 11,
+    },
+    yLabel: {
+      color: colors.textSecondary,
+      fontSize: 10,
+    },
+    empty: {
+      padding: 24,
+      alignItems: 'center',
+    },
+    emptyText: {
+      color: colors.textSecondary,
+      fontSize: 14,
+    },
+  });
+}

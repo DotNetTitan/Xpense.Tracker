@@ -1,17 +1,20 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
+import { useAppColors } from '../../hooks/use-app-colors';
 
 export default function TabLayout() {
+  const colors = useAppColors();
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#1565C0',
-        tabBarInactiveTintColor: '#90A4AE',
+        tabBarActiveTintColor: colors.tabBarActive,
+        tabBarInactiveTintColor: colors.tabBarInactive,
         tabBarStyle: {
-          backgroundColor: '#fff',
+          backgroundColor: colors.tabBarBg,
           borderTopWidth: 1,
-          borderTopColor: '#E0E7EF',
+          borderTopColor: colors.tabBarBorder,
           height: 60,
           paddingBottom: 8,
         },

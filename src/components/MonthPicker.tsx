@@ -1,7 +1,9 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from 'react-native-paper';
+import { AppColors } from '../../constants/theme';
+import { useAppColors } from '../../hooks/use-app-colors';
 import { monthLabel, toMonthKey } from '../utils/formatters';
 
 interface Props {
@@ -21,6 +23,8 @@ function getLast12Months(): string[] {
 }
 
 export function MonthPicker({ selectedMonth, onChange }: Props) {
+  const colors = useAppColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const months = getLast12Months();
 
   function shift(delta: number) {
@@ -45,7 +49,7 @@ export function MonthPicker({ selectedMonth, onChange }: Props) {
         <MaterialIcons
           name="chevron-left"
           size={28}
-          color={isOldestMonth ? '#CBD5E1' : '#1565C0'}
+          color={isOldestMonth ? colors.disabledIcon : colors.primary}
         />
       </TouchableOpacity>
 
@@ -63,31 +67,33 @@ export function MonthPicker({ selectedMonth, onChange }: Props) {
         <MaterialIcons
           name="chevron-right"
           size={28}
-          color={isCurrentMonth ? '#CBD5E1' : '#1565C0'}
+          color={isCurrentMonth ? colors.disabledIcon : colors.primary}
         />
       </TouchableOpacity>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    gap: 16,
-  },
-  arrow: {
-    padding: 4,
-  },
-  label: {
-    minWidth: 120,
-    alignItems: 'center',
-  },
-  labelText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1a1a2e',
-  },
-});
+function createStyles(colors: AppColors) {
+  return StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 8,
+      gap: 16,
+    },
+    arrow: {
+      padding: 4,
+    },
+    label: {
+      minWidth: 120,
+      alignItems: 'center',
+    },
+    labelText: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+  });
+}

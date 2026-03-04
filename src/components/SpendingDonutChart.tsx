@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { PieChart } from 'react-native-gifted-charts';
 import { Text } from 'react-native-paper';
+import { AppColors } from '../../constants/theme';
+import { useAppColors } from '../../hooks/use-app-colors';
 import { CategoryTotal } from '../types';
 import { formatCurrency } from '../utils/formatters';
 
@@ -11,6 +13,9 @@ interface Props {
 }
 
 export function SpendingDonutChart({ data, totalSpent }: Props) {
+  const colors = useAppColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   if (data.length === 0) {
     return (
       <View style={styles.empty}>
@@ -56,54 +61,58 @@ export function SpendingDonutChart({ data, totalSpent }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    gap: 20,
-  },
-  centerLabel: {
-    alignItems: 'center',
-  },
-  centerAmount: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1a1a2e',
-  },
-  centerSub: {
-    fontSize: 12,
-    color: '#7B8B9A',
-  },
-  legend: {
-    width: '100%',
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  legendLabel: {
-    flex: 1,
-    fontSize: 13,
-    color: '#444',
-  },
-  legendAmount: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#1a1a2e',
-  },
-  empty: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  emptyText: {
-    color: '#7B8B9A',
-    fontSize: 14,
-  },
-});
+function createStyles(colors: AppColors) {
+  return StyleSheet.create({
+    container: {
+      alignItems: 'center',
+      gap: 20,
+    },
+    centerLabel: {
+      alignItems: 'center',
+    },
+    centerAmount: {
+      fontSize: 16,
+      fontWeight: '700',
+      // Always dark — the donut hole background is always white
+      color: '#1a1a2e',
+    },
+    centerSub: {
+      fontSize: 12,
+      // Always dark — same reason
+      color: '#7B8B9A',
+    },
+    legend: {
+      width: '100%',
+      paddingHorizontal: 16,
+      gap: 8,
+    },
+    legendItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    legendDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+    },
+    legendLabel: {
+      flex: 1,
+      fontSize: 13,
+      color: colors.textMuted,
+    },
+    legendAmount: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    empty: {
+      padding: 24,
+      alignItems: 'center',
+    },
+    emptyText: {
+      color: colors.textSecondary,
+      fontSize: 14,
+    },
+  });
+}

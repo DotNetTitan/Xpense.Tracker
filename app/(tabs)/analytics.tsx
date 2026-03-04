@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Surface, Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,9 +8,14 @@ import { MonthPicker } from '../../src/components/MonthPicker';
 import { SpendingDonutChart } from '../../src/components/SpendingDonutChart';
 import { useCategoryTotals, useMonthlyTotals } from '../../src/hooks/useTransactions';
 import { useFilterStore } from '../../src/store/filterStore';
+import { ThemeToggle } from '../../src/components/ThemeToggle';
 import { formatCurrency, monthLabel } from '../../src/utils/formatters';
+import { AppColors } from '../../constants/theme';
+import { useAppColors } from '../../hooks/use-app-colors';
 
 export default function AnalyticsScreen() {
+  const colors = useAppColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { selectedMonth, setSelectedMonth } = useFilterStore();
   const { data: categoryTotals = [], isLoading: loadingCats } = useCategoryTotals();
   const { data: monthlyTotals = [], isLoading: loadingMonthly } = useMonthlyTotals(6);
@@ -28,6 +33,7 @@ export default function AnalyticsScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Analytics</Text>
+          <ThemeToggle size={24} />
         </View>
 
         {/* Month Picker */}
@@ -49,7 +55,7 @@ export default function AnalyticsScreen() {
                 Spending Breakdown · {monthLabel(selectedMonth)}
               </Text>
               {loadingCats ? (
-                <ActivityIndicator style={{ padding: 24 }} color="#1565C0" />
+                <ActivityIndicator style={{ padding: 24 }} color={colors.primary} />
               ) : (
                 <SpendingDonutChart data={categoryTotals} totalSpent={totalSpent} />
               )}
@@ -59,7 +65,7 @@ export default function AnalyticsScreen() {
             <Surface style={styles.card} elevation={1}>
               <Text style={styles.cardTitle}>Monthly Trend (Last 6 Months)</Text>
               {loadingMonthly ? (
-                <ActivityIndicator style={{ padding: 24 }} color="#1565C0" />
+                <ActivityIndicator style={{ padding: 24 }} color={colors.primary} />
               ) : (
                 <MonthlyBarChart data={monthlyTotals} />
               )}
@@ -111,63 +117,68 @@ export default function AnalyticsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#F4F7FB' },
-  scroll: { flex: 1 },
-  content: { paddingBottom: 40 },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 4,
-  },
-  title: { fontSize: 22, fontWeight: '800', color: '#1a1a2e' },
-  card: {
-    margin: 16,
-    marginBottom: 0,
-    borderRadius: 16,
-    padding: 16,
-    backgroundColor: '#fff',
-  },
-  cardTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1a1a2e',
-    marginBottom: 16,
-  },
-  catRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-    gap: 8,
-  },
-  catDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  catName: { flex: 1, fontSize: 14, color: '#333' },
-  catPct: { fontSize: 12, color: '#7B8B9A', minWidth: 40, textAlign: 'right' },
-  catAmount: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1a1a2e',
-    minWidth: 80,
-    textAlign: 'right',
-  },
-  barBg: {
-    height: 6,
-    backgroundColor: '#F0F4F8',
-    borderRadius: 3,
-    marginBottom: 12,
-    overflow: 'hidden',
-  },
-  barFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#F0F4F8',
-    marginBottom: 12,
-  },
-});
+function createStyles(colors: AppColors) {
+  return StyleSheet.create({
+    safeArea: { flex: 1, backgroundColor: colors.pageBg },
+    scroll: { flex: 1 },
+    content: { paddingBottom: 40 },
+    header: {
+      paddingHorizontal: 20,
+      paddingTop: 12,
+      paddingBottom: 4,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    title: { fontSize: 22, fontWeight: '800', color: colors.textPrimary },
+    card: {
+      margin: 16,
+      marginBottom: 0,
+      borderRadius: 16,
+      padding: 16,
+      backgroundColor: colors.cardBg,
+    },
+    cardTitle: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: 16,
+    },
+    catRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 6,
+      gap: 8,
+    },
+    catDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+    },
+    catName: { flex: 1, fontSize: 14, color: colors.textMuted },
+    catPct: { fontSize: 12, color: colors.textSecondary, minWidth: 40, textAlign: 'right' },
+    catAmount: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      minWidth: 80,
+      textAlign: 'right',
+    },
+    barBg: {
+      height: 6,
+      backgroundColor: colors.progressBg,
+      borderRadius: 3,
+      marginBottom: 12,
+      overflow: 'hidden',
+    },
+    barFill: {
+      height: '100%',
+      borderRadius: 3,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.progressBg,
+      marginBottom: 12,
+    },
+  });
+}

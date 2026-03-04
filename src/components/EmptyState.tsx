@@ -1,7 +1,9 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
+import { AppColors } from '../../constants/theme';
+import { useAppColors } from '../../hooks/use-app-colors';
 
 interface Props {
   title?: string;
@@ -18,9 +20,12 @@ export function EmptyState({
   onAction,
   icon = 'receipt-long',
 }: Props) {
+  const colors = useAppColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.container}>
-      <MaterialIcons name={icon as any} size={64} color="#CBD5E1" />
+      <MaterialIcons name={icon as any} size={64} color={colors.disabledIcon} />
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.subtitle}>{subtitle}</Text>
       {actionLabel && onAction && (
@@ -32,29 +37,31 @@ export function EmptyState({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 40,
-    gap: 12,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1a1a2e',
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#7B8B9A',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  button: {
-    marginTop: 8,
-    borderRadius: 10,
-  },
-});
+function createStyles(colors: AppColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 40,
+      gap: 12,
+    },
+    title: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      textAlign: 'center',
+      marginTop: 8,
+    },
+    subtitle: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    button: {
+      marginTop: 8,
+      borderRadius: 10,
+    },
+  });
+}

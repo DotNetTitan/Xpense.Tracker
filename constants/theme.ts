@@ -1,31 +1,93 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * App color tokens for light and dark mode.
+ * All colors used in screens and components should come from here via useAppColors().
  */
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
-
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    // Backgrounds
+    pageBg: '#F4F7FB',
+    cardBg: '#FFFFFF',
+    surfaceVariant: '#E8EEF7',
+    modalBg: '#F4F7FB',
+    // Text
+    textPrimary: '#1a1a2e',
+    textSecondary: '#7B8B9A',
+    textMuted: '#444444',
+    textOnPrimary: '#FFFFFF',
+    // Accent
+    primary: '#1565C0',
+    secondary: '#1E88E5',
+    // Semantic
+    debit: '#E53935',
+    credit: '#43A047',
+    gmailFab: '#DB4437',
+    successBg: '#2E7D32',
+    errorBg: '#C62828',
+    deleteBg: '#FFF5F5',
+    deleteBorder: '#FFCDD2',
+    // Tab bar
+    tabBarBg: '#FFFFFF',
+    tabBarBorder: '#E0E7EF',
+    tabBarActive: '#1565C0',
+    tabBarInactive: '#90A4AE',
+    // Chips / filters
+    filterChipBg: '#E8EEF7',
+    // Charts
+    barInactive: '#90CAF9',
+    progressBg: '#F0F4F8',
+    // Misc
+    divider: '#E8EEF7',
+    dragHandle: '#D0D7E2',
+    disabledIcon: '#CBD5E1',
+    rawSmsBg: '#E8EEF7',
+    rawSmsText: '#555555',
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    // Backgrounds
+    pageBg: '#121212',
+    cardBg: '#1E1E1E',
+    surfaceVariant: '#2C2C2C',
+    modalBg: '#121212',
+    // Text
+    textPrimary: '#E4E4E4',
+    textSecondary: '#9E9E9E',
+    textMuted: '#BDBDBD',
+    textOnPrimary: '#FFFFFF',
+    // Accent
+    primary: '#5C9CE6',
+    secondary: '#64B5F6',
+    // Semantic
+    debit: '#EF5350',
+    credit: '#66BB6A',
+    gmailFab: '#DB4437',
+    successBg: '#1B5E20',
+    errorBg: '#B71C1C',
+    deleteBg: '#2C1212',
+    deleteBorder: '#7B2020',
+    // Tab bar
+    tabBarBg: '#1E1E1E',
+    tabBarBorder: '#333333',
+    tabBarActive: '#5C9CE6',
+    tabBarInactive: '#757575',
+    // Chips / filters
+    filterChipBg: '#2C2C2C',
+    // Charts
+    barInactive: '#3D5A80',
+    progressBg: '#2C2C2C',
+    // Misc
+    divider: '#2C2C2C',
+    dragHandle: '#444444',
+    disabledIcon: '#444444',
+    rawSmsBg: '#2C2C2C',
+    rawSmsText: '#BDBDBD',
   },
 };
+
+/** Type of all resolved app color tokens */
+export type AppColors = typeof Colors.light;
 
 export const Fonts = Platform.select({
   ios: {

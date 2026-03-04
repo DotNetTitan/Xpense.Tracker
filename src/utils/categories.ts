@@ -3,7 +3,7 @@ import { Category } from '../types';
 export const CATEGORIES: Record<string, Category> = {
   Swiggy: { name: 'Swiggy', color: '#FC8019', icon: 'delivery-dining' },
   Zomato: { name: 'Zomato', color: '#E23744', icon: 'delivery-dining' },
-  Uber: { name: 'Uber', color: '#000000', icon: 'directions-car' },
+  Uber: { name: 'Uber', color: '#607D8B', icon: 'directions-car' },
   Food: { name: 'Food', color: '#FF6B6B', icon: 'restaurant' },
   Transport: { name: 'Transport', color: '#FFB347', icon: 'directions-car' },
   Shopping: { name: 'Shopping', color: '#4FC3F7', icon: 'shopping-bag' },

@@ -1,11 +1,12 @@
-import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { MD3LightTheme, PaperProvider } from 'react-native-paper';
+import { MD3DarkTheme, MD3LightTheme, PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useEffectiveColorScheme } from '../hooks/use-app-colors';
 import { deduplicateExistingTransactions, initDb } from '../src/services/db.service';
 
 const queryClient = new QueryClient({
@@ -17,7 +18,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const paperTheme = {
+const paperLightTheme = {
   ...MD3LightTheme,
   colors: {
     ...MD3LightTheme.colors,
@@ -26,11 +27,23 @@ const paperTheme = {
   },
 };
 
+const paperDarkTheme = {
+  ...MD3DarkTheme,
+  colors: {
+    ...MD3DarkTheme.colors,
+    primary: '#5C9CE6',
+    secondary: '#64B5F6',
+  },
+};
+
 export const unstable_settings = {
   anchor: '(tabs)',
 };
 
 export default function RootLayout() {
+  const colorScheme = useEffectiveColorScheme();
+  const isDark = colorScheme === 'dark';
+
   useEffect(() => {
     // Initialize SQLite database on startup, then clean up any cross-source duplicates
     // (e.g. an Uber email receipt + the matching UPI bank SMS debit).
@@ -42,12 +55,12 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <PaperProvider theme={paperTheme}>
-            <ThemeProvider value={DefaultTheme}>
+          <PaperProvider theme={isDark ? paperDarkTheme : paperLightTheme}>
+            <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
               <Stack>
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               </Stack>
-              <StatusBar style="dark" />
+              <StatusBar style={isDark ? 'light' : 'dark'} />
             </ThemeProvider>
           </PaperProvider>
         </QueryClientProvider>
