@@ -25,7 +25,8 @@ export function initDb(): void {
       date INTEGER NOT NULL,
       raw_sms TEXT,
       sms_id TEXT UNIQUE,
-      source TEXT DEFAULT 'sms'
+      source TEXT DEFAULT 'sms',
+      deleted INTEGER DEFAULT 0
     );
     CREATE INDEX IF NOT EXISTS idx_date ON transactions(date);
     CREATE INDEX IF NOT EXISTS idx_category ON transactions(category);
@@ -38,6 +39,11 @@ export function initDb(): void {
 function migrateDb(database: SQLite.SQLiteDatabase): void {
   try {
     database.execSync(`ALTER TABLE transactions ADD COLUMN source TEXT DEFAULT 'sms'`);
+  } catch {
+    // Column already exists — no-op
+  }
+  try {
+    database.execSync(`ALTER TABLE transactions ADD COLUMN deleted INTEGER DEFAULT 0`);
   } catch {
     // Column already exists — no-op
   }
@@ -90,6 +96,7 @@ export function bulkInsertTransactions(txs: Transaction[]): number {
              AND amount >= ? - ?
              AND type = 'debit'
              AND source = 'email'
+             AND deleted = 0
            LIMIT 1`,
           [tx.date, WINDOW_MS, tx.amount, tx.amount, TOLERANCE]
         );
@@ -155,6 +162,7 @@ export function replaceWithEmailBatch(txs: Transaction[]): number {
            AND amount <= ? + ?
            AND type = 'debit'
            AND (source = 'sms' OR source IS NULL)
+           AND deleted = 0
          LIMIT 1`,
         [tx.date, WINDOW_MS, tx.amount, tx.amount, TOLERANCE]
       );
@@ -199,7 +207,7 @@ export function getTransactions(monthKey: string, category?: string): Transactio
   const start = new Date(year, month - 1, 1).getTime();
   const end = new Date(year, month, 1).getTime();
 
-  let query = `SELECT * FROM transactions WHERE date >= ? AND date < ?`;
+  let query = `SELECT * FROM transactions WHERE date >= ? AND date < ? AND deleted = 0`;
   const params: (string | number)[] = [start, end];
 
   if (category && category !== 'All') {
@@ -217,7 +225,7 @@ export function getTransactions(monthKey: string, category?: string): Transactio
 export function getAllTransactions(): Transaction[] {
   const database = getDb();
   const rows = database.getAllSync<any>(
-    `SELECT * FROM transactions ORDER BY date DESC`
+    `SELECT * FROM transactions WHERE deleted = 0 ORDER BY date DESC`
   );
   return rows.map(rowToTransaction);
 }
@@ -238,7 +246,7 @@ export function getMonthlyTotals(monthsBack = 6): { month: string; total: number
 
     const row = database.getFirstSync<{ total: number }>(
       `SELECT COALESCE(SUM(amount), 0) as total FROM transactions
-       WHERE type = 'debit' AND date >= ? AND date < ?`,
+       WHERE type = 'debit' AND date >= ? AND date < ? AND deleted = 0`,
       [start, end]
     );
     results.push({ month: key, total: row?.total ?? 0 });
@@ -256,7 +264,7 @@ export function getCategoryTotals(monthKey: string): { category: string; total: 
 
   return database.getAllSync<{ category: string; total: number }>(
     `SELECT category, SUM(amount) as total FROM transactions
-     WHERE type = 'debit' AND date >= ? AND date < ?
+     WHERE type = 'debit' AND date >= ? AND date < ? AND deleted = 0
      GROUP BY category
      ORDER BY total DESC`,
     [start, end]
@@ -289,7 +297,7 @@ export function deduplicateExistingTransactions(): void {
     bank: string;
   }>(
     `SELECT id, date, amount, merchant, category, bank
-     FROM transactions WHERE type = 'debit' AND source = 'email'`
+     FROM transactions WHERE type = 'debit' AND source = 'email' AND deleted = 0`
   );
 
   if (emailRows.length === 0) return;
@@ -303,6 +311,7 @@ export function deduplicateExistingTransactions(): void {
            AND amount <= ? + ?
            AND type = 'debit'
            AND (source = 'sms' OR source IS NULL)
+           AND deleted = 0
          LIMIT 1`,
         [emailRow.date, WINDOW_MS, emailRow.amount, emailRow.amount, TOLERANCE]
       );
@@ -321,10 +330,11 @@ export function deduplicateExistingTransactions(): void {
   });
 }
 
-/** Delete a transaction by id. */
+/** Soft-delete a transaction by id. The row stays in the DB so its sms_id
+ *  continues to satisfy the UNIQUE constraint, preventing re-insertion on sync. */
 export function deleteTransaction(id: string): void {
   const database = getDb();
-  database.runSync(`DELETE FROM transactions WHERE id = ?`, [id]);
+  database.runSync(`UPDATE transactions SET deleted = 1 WHERE id = ?`, [id]);
 }
 
 /** Update the category of a transaction. */
@@ -337,7 +347,7 @@ export function updateTransactionCategory(id: string, category: string): void {
 export function getTransactionCount(): number {
   const database = getDb();
   const row = database.getFirstSync<{ count: number }>(
-    `SELECT COUNT(*) as count FROM transactions`
+    `SELECT COUNT(*) as count FROM transactions WHERE deleted = 0`
   );
   return row?.count ?? 0;
 }
