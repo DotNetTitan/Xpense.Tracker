@@ -1,21 +1,21 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import {
-    Alert,
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    TouchableOpacity,
-    View,
+  Alert,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppColors } from '../../constants/theme';
 import { useAppColors } from '../../hooks/use-app-colors';
 import {
-    useDeleteTransaction,
-    useUpdateTransactionCategory,
+  useDeleteTransaction,
+  useUpdateTransactionCategory,
 } from '../hooks/useTransactions';
 import { Transaction } from '../types';
 import { CATEGORIES } from '../utils/categories';
@@ -36,7 +36,7 @@ export function TransactionDetailModal({ transaction, onClose }: Props) {
 
   if (!transaction) return null;
 
-  const { id, amount, type, merchant, bank, account, category, date, rawSms } = transaction;
+  const { id, amount, type, merchant, bank, account, category, date, rawSms, source } = transaction;
   const cat = CATEGORIES[category] ?? CATEGORIES.Uncategorized;
   const isDebit = type === 'debit';
   const bankDisplay = normalizeBankName(bank);
@@ -161,7 +161,7 @@ export function TransactionDetailModal({ transaction, onClose }: Props) {
           </View>
 
           {/* Raw SMS toggle */}
-          {rawSms ? (
+          {rawSms && source !== 'email' ? (
             <>
               <TouchableOpacity
                 style={styles.rawSmsToggle}
