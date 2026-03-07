@@ -23,8 +23,12 @@ export function useSmsSync() {
   const invalidate = useInvalidateTransactions();
   const { acquire, release } = useSyncStore();
   const syncDaysBack = useSettingsStore((s) => s.syncDaysBack);
+  const hasHydrated = useSettingsStore((s) => s.hasHydrated);
 
   const sync = useCallback(async () => {
+    // Wait until the persisted settings have been loaded from AsyncStorage
+    // so the correct look-back window is used (not just the default).
+    if (!hasHydrated) return;
     setError(null);
     setResult(null);
 
@@ -65,7 +69,7 @@ export function useSmsSync() {
     } finally {
       release();
     }
-  }, [invalidate, acquire, release, syncDaysBack]);
+  }, [invalidate, acquire, release, syncDaysBack, hasHydrated]);
 
   const reset = useCallback(() => {
     setStatus('idle');
