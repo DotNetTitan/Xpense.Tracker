@@ -5,6 +5,7 @@ import {
     hasSmsPermission,
     requestSmsPermission,
 } from '../services/sms.service';
+import { useSettingsStore } from '../store/settingsStore';
 import { useSyncStore } from '../store/syncStore';
 import { useInvalidateTransactions } from './useTransactions';
 
@@ -21,8 +22,9 @@ export function useSmsSync() {
   const [error, setError] = useState<string | null>(null);
   const invalidate = useInvalidateTransactions();
   const { acquire, release } = useSyncStore();
+  const syncDaysBack = useSettingsStore((s) => s.syncDaysBack);
 
-  const sync = useCallback(async (daysBack = 365) => {
+  const sync = useCallback(async () => {
     setError(null);
     setResult(null);
 
@@ -47,7 +49,7 @@ export function useSmsSync() {
 
       // Fetch and parse SMS
       setStatus('fetching');
-      const parsed = await fetchAndParseBankSMS(daysBack);
+      const parsed = await fetchAndParseBankSMS(syncDaysBack);
 
       // Bulk insert (dedup via sms_id UNIQUE constraint)
       const inserted = bulkInsertTransactions(parsed);
@@ -63,7 +65,7 @@ export function useSmsSync() {
     } finally {
       release();
     }
-  }, [invalidate, acquire, release]);
+  }, [invalidate, acquire, release, syncDaysBack]);
 
   const reset = useCallback(() => {
     setStatus('idle');

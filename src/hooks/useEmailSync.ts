@@ -25,6 +25,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { GMAIL_CONFIG } from '../config/gmail';
 import { replaceWithEmailBatch } from '../services/db.service';
 import { fetchAndParseUberEmails } from '../services/gmail.service';
+import { useSettingsStore } from '../store/settingsStore';
 import { useSyncStore } from '../store/syncStore';
 import { useInvalidateTransactions } from './useTransactions';
 
@@ -51,6 +52,7 @@ export function useEmailSync() {
   const [isConnected, setIsConnected] = useState(false);
   const invalidate = useInvalidateTransactions();
   const { acquire, release } = useSyncStore();
+  const syncDaysBack = useSettingsStore((s) => s.syncDaysBack);
 
   // Configure the native Google Sign-In SDK and check existing session on mount.
   useEffect(() => {
@@ -91,7 +93,7 @@ export function useEmailSync() {
 
   // ── Public API ────────────────────────────────────────────────────────────
 
-  /** Open the Google account picker, then immediately sync 365 days back. */
+  /** Open the Google account picker, then immediately sync using configured days back. */
   const connect = useCallback(async () => {
     setError(null);
     setResult(null);
@@ -107,7 +109,7 @@ export function useEmailSync() {
 
       if (isSuccessResponse(response)) {
         setIsConnected(true);
-        await doSync(365);
+        await doSync(syncDaysBack);
       }
     } catch (err: any) {
       if (isErrorWithCode(err) && err.code === statusCodes.IN_PROGRESS) {
@@ -117,14 +119,14 @@ export function useEmailSync() {
         setStatus('error');
       }
     }
-  }, [doSync]);
+  }, [doSync, syncDaysBack]);
 
   /**
    * Sync Uber emails silently (no UI). Safe to call on app open.
    * No-op if the user has never signed in.
    */
   const sync = useCallback(
-    async (daysBack = 365) => {
+    async () => {
       if (!isConnected) return;
       setError(null);
       setResult(null);
@@ -136,13 +138,13 @@ export function useEmailSync() {
           setIsConnected(false);
           return;
         }
-        await doSync(daysBack);
+        await doSync(syncDaysBack);
       } catch (err: any) {
         setError(err?.message ?? 'Email sync failed');
         setStatus('error');
       }
     },
-    [isConnected, doSync],
+    [isConnected, doSync, syncDaysBack],
   );
 
   /** Revoke Google access and sign out completely. */
