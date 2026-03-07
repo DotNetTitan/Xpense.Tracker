@@ -201,7 +201,11 @@ export function replaceWithEmailBatch(txs: Transaction[]): number {
 }
 
 /** Fetch transactions filtered by month (YYYY-MM), optionally category, and optionally type. */
-export function getTransactions(monthKey: string, category?: string, type?: string): Transaction[] {
+export function getTransactions(
+  monthKey: string,
+  category?: string,
+  type?: Transaction['type'] | 'All',
+): Transaction[] {
   const database = getDb();
   const [year, month] = monthKey.split('-').map(Number);
   const start = new Date(year, month - 1, 1).getTime();
