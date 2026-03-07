@@ -78,7 +78,7 @@ export default function TransactionsScreen() {
         <MaterialIcons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search by merchant..."
+          placeholder="Search by merchant or bank..."
           placeholderTextColor={colors.textSecondary}
           value={searchQuery}
           onChangeText={setSearchQuery}
