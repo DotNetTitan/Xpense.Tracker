@@ -1,5 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Surface, Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,6 +25,7 @@ export default function SettingsScreen() {
   const colors = useAppColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { syncDaysBack, setSyncDaysBack } = useSettingsStore();
+  const [syncPeriodExpanded, setSyncPeriodExpanded] = useState(false);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -41,35 +42,50 @@ export default function SettingsScreen() {
 
         {/* Sync Days */}
         <Surface style={styles.card} elevation={1}>
-          <View style={styles.cardHeader}>
-            <MaterialIcons name="sync" size={20} color={colors.primary} />
-            <Text style={styles.cardTitle}>Sync Period</Text>
-          </View>
-          <Text style={styles.cardSubtitle}>
-            How far back to look when syncing SMS and Gmail transactions.
-          </Text>
-          <View style={styles.optionsList}>
-            {SYNC_DAYS_OPTIONS.map((days) => {
-              const selected = syncDaysBack === days;
-              return (
-                <TouchableOpacity
-                  key={days}
-                  style={[styles.optionRow, selected && styles.optionRowSelected]}
-                  onPress={() => setSyncDaysBack(days)}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={[styles.optionLabel, selected && styles.optionLabelSelected]}
-                  >
-                    {SYNC_DAYS_LABELS[days]}
-                  </Text>
-                  {selected && (
-                    <MaterialIcons name="check" size={20} color={colors.primary} />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <TouchableOpacity
+            style={styles.cardHeader}
+            onPress={() => setSyncPeriodExpanded((v) => !v)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.cardHeaderLeft}>
+              <MaterialIcons name="sync" size={20} color={colors.primary} />
+              <Text style={styles.cardTitle}>Sync Period</Text>
+            </View>
+            <MaterialIcons
+              name={syncPeriodExpanded ? 'expand-less' : 'expand-more'}
+              size={22}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+          {syncPeriodExpanded && (
+            <>
+              <Text style={styles.cardSubtitle}>
+                How far back to look when syncing SMS and Gmail transactions.
+              </Text>
+              <View style={styles.optionsList}>
+                {SYNC_DAYS_OPTIONS.map((days) => {
+                  const selected = syncDaysBack === days;
+                  return (
+                    <TouchableOpacity
+                      key={days}
+                      style={[styles.optionRow, selected && styles.optionRowSelected]}
+                      onPress={() => setSyncDaysBack(days)}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={[styles.optionLabel, selected && styles.optionLabelSelected]}
+                      >
+                        {SYNC_DAYS_LABELS[days]}
+                      </Text>
+                      {selected && (
+                        <MaterialIcons name="check" size={20} color={colors.primary} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </>
+          )}
         </Surface>
       </ScrollView>
     </SafeAreaView>
@@ -99,8 +115,12 @@ function createStyles(colors: AppColors) {
     cardHeader: {
       flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    cardHeaderLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
       gap: 8,
-      marginBottom: 4,
     },
     cardTitle: {
       fontSize: 15,
@@ -110,6 +130,7 @@ function createStyles(colors: AppColors) {
     cardSubtitle: {
       fontSize: 13,
       color: colors.textSecondary,
+      marginTop: 8,
       marginBottom: 16,
       lineHeight: 18,
     },
