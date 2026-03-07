@@ -1,5 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     RefreshControl,
     ScrollView,
@@ -19,7 +19,6 @@ import { useEmailSync } from '../../src/hooks/useEmailSync';
 import { useSmsSync } from '../../src/hooks/useSmsSync';
 import { useCategoryTotals, useTransactionCount, useTransactions } from '../../src/hooks/useTransactions';
 import { useFilterStore } from '../../src/store/filterStore';
-import { useSettingsStore } from '../../src/store/settingsStore';
 import { Transaction } from '../../src/types';
 import { CATEGORIES } from '../../src/utils/categories';
 import { formatCurrency } from '../../src/utils/formatters';
@@ -33,20 +32,7 @@ export default function DashboardScreen() {
   const { data: txCount = 0 } = useTransactionCount();
   const { sync, status, result, error, reset } = useSmsSync();
   const emailSync = useEmailSync();
-  const settingsHydrated = useSettingsStore((s) => s.hasHydrated);
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
-  const hasSyncedOnMount = useRef(false);
-
-  // Auto-sync once per session after settings have hydrated so the correct
-  // look-back window is used rather than the in-memory default.
-  useEffect(() => {
-    if (!settingsHydrated || hasSyncedOnMount.current) return;
-    hasSyncedOnMount.current = true;
-    sync();
-    // Auto-sync Gmail too if already connected (no prompt needed)
-    emailSync.sync();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settingsHydrated]);
 
   const totalSpent = transactions
     .filter((t) => t.type === 'debit')
