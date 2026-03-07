@@ -25,6 +25,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { GMAIL_CONFIG } from '../config/gmail';
 import { replaceWithEmailBatch } from '../services/db.service';
 import { fetchAndParseUberEmails } from '../services/gmail.service';
+import { useSettingsStore } from '../store/settingsStore';
 import { useSyncStore } from '../store/syncStore';
 import { useInvalidateTransactions } from './useTransactions';
 
@@ -51,6 +52,8 @@ export function useEmailSync() {
   const [isConnected, setIsConnected] = useState(false);
   const invalidate = useInvalidateTransactions();
   const { acquire, release } = useSyncStore();
+  const syncDaysBack = useSettingsStore((s) => s.syncDaysBack);
+  const hasHydrated = useSettingsStore((s) => s.hasHydrated);
 
   // Configure the native Google Sign-In SDK and check existing session on mount.
   useEffect(() => {
@@ -82,6 +85,9 @@ export function useEmailSync() {
         await invalidate();
         setResult({ imported: inserted, total: emails.length });
         setStatus('done');
+      } catch (err: any) {
+        setError(err?.message ?? 'Email sync failed');
+        setStatus('error');
       } finally {
         release();
       }
@@ -91,11 +97,14 @@ export function useEmailSync() {
 
   // ── Public API ────────────────────────────────────────────────────────────
 
-  /** Open the Google account picker, then immediately sync 365 days back. */
+  /** Open the Google account picker, then immediately sync using configured days back. */
   const connect = useCallback(async () => {
     setError(null);
     setResult(null);
     setStatus('requesting_auth');
+
+    // ── Auth phase ───────────────────────────────────────────────────────────
+    let signedIn = false;
     try {
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
       const response = await GoogleSignin.signIn();
@@ -107,7 +116,7 @@ export function useEmailSync() {
 
       if (isSuccessResponse(response)) {
         setIsConnected(true);
-        await doSync(365);
+        signedIn = true;
       }
     } catch (err: any) {
       if (isErrorWithCode(err) && err.code === statusCodes.IN_PROGRESS) {
@@ -116,16 +125,25 @@ export function useEmailSync() {
         setError(err?.message ?? 'Google sign-in failed');
         setStatus('error');
       }
+      return;
     }
-  }, [doSync]);
+
+    // ── Sync phase (errors reported separately from auth errors) ─────────────
+    if (signedIn) {
+      await doSync(syncDaysBack);
+    }
+  }, [doSync, syncDaysBack]);
 
   /**
    * Sync Uber emails silently (no UI). Safe to call on app open.
-   * No-op if the user has never signed in.
+   * No-op if the user has never signed in or settings haven't hydrated yet.
    */
   const sync = useCallback(
-    async (daysBack = 365) => {
+    async () => {
       if (!isConnected) return;
+      // Wait until the persisted settings have been loaded from AsyncStorage
+      // so the correct look-back window is used (not just the default).
+      if (!hasHydrated) return;
       setError(null);
       setResult(null);
       try {
@@ -136,13 +154,13 @@ export function useEmailSync() {
           setIsConnected(false);
           return;
         }
-        await doSync(daysBack);
+        await doSync(syncDaysBack);
       } catch (err: any) {
         setError(err?.message ?? 'Email sync failed');
         setStatus('error');
       }
     },
-    [isConnected, doSync],
+    [isConnected, hasHydrated, doSync, syncDaysBack],
   );
 
   /** Revoke Google access and sign out completely. */

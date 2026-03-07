@@ -5,6 +5,7 @@ import {
     hasSmsPermission,
     requestSmsPermission,
 } from '../services/sms.service';
+import { useSettingsStore } from '../store/settingsStore';
 import { useSyncStore } from '../store/syncStore';
 import { useInvalidateTransactions } from './useTransactions';
 
@@ -21,8 +22,13 @@ export function useSmsSync() {
   const [error, setError] = useState<string | null>(null);
   const invalidate = useInvalidateTransactions();
   const { acquire, release } = useSyncStore();
+  const syncDaysBack = useSettingsStore((s) => s.syncDaysBack);
+  const hasHydrated = useSettingsStore((s) => s.hasHydrated);
 
-  const sync = useCallback(async (daysBack = 365) => {
+  const sync = useCallback(async () => {
+    // Wait until the persisted settings have been loaded from AsyncStorage
+    // so the correct look-back window is used (not just the default).
+    if (!hasHydrated) return;
     setError(null);
     setResult(null);
 
@@ -47,7 +53,7 @@ export function useSmsSync() {
 
       // Fetch and parse SMS
       setStatus('fetching');
-      const parsed = await fetchAndParseBankSMS(daysBack);
+      const parsed = await fetchAndParseBankSMS(syncDaysBack);
 
       // Bulk insert (dedup via sms_id UNIQUE constraint)
       const inserted = bulkInsertTransactions(parsed);
@@ -63,7 +69,7 @@ export function useSmsSync() {
     } finally {
       release();
     }
-  }, [invalidate, acquire, release]);
+  }, [invalidate, acquire, release, syncDaysBack, hasHydrated]);
 
   const reset = useCallback(() => {
     setStatus('idle');
