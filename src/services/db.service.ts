@@ -200,8 +200,8 @@ export function replaceWithEmailBatch(txs: Transaction[]): number {
   return inserted;
 }
 
-/** Fetch transactions filtered by month (YYYY-MM) and optionally category. */
-export function getTransactions(monthKey: string, category?: string): Transaction[] {
+/** Fetch transactions filtered by month (YYYY-MM), optionally category, and optionally type. */
+export function getTransactions(monthKey: string, category?: string, type?: string): Transaction[] {
   const database = getDb();
   const [year, month] = monthKey.split('-').map(Number);
   const start = new Date(year, month - 1, 1).getTime();
@@ -213,6 +213,11 @@ export function getTransactions(monthKey: string, category?: string): Transactio
   if (category && category !== 'All') {
     query += ` AND category = ?`;
     params.push(category);
+  }
+
+  if (type && type !== 'All') {
+    query += ` AND type = ?`;
+    params.push(type);
   }
 
   query += ` ORDER BY date DESC`;

@@ -1,8 +1,10 @@
+import { MaterialIcons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import {
     FlatList,
     RefreshControl,
     StyleSheet,
+    TextInput,
     View,
 } from 'react-native';
 import { ActivityIndicator, Chip, Text } from 'react-native-paper';
@@ -18,9 +20,15 @@ import { useTransactions } from '../../src/hooks/useTransactions';
 import { useFilterStore } from '../../src/store/filterStore';
 import { Transaction } from '../../src/types';
 import { CATEGORIES } from '../../src/utils/categories';
-import { formatDate } from '../../src/utils/formatters';
+import { formatDate, normalizeBankName, normalizeMerchantName } from '../../src/utils/formatters';
 
 const ALL_CATEGORIES = ['All', ...Object.keys(CATEGORIES)];
+
+const TYPE_FILTERS: { label: string; value: 'All' | 'debit' | 'credit' }[] = [
+  { label: 'All', value: 'All' },
+  { label: 'Expenses', value: 'debit' },
+  { label: 'Income', value: 'credit' },
+];
 
 function groupByDate(txs: Transaction[]): { date: string; items: Transaction[] }[] {
   const map = new Map<string, Transaction[]>();
@@ -35,12 +43,24 @@ function groupByDate(txs: Transaction[]): { date: string; items: Transaction[] }
 export default function TransactionsScreen() {
   const colors = useAppColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { selectedMonth, setSelectedMonth, selectedCategory, setSelectedCategory } =
+  const { selectedMonth, setSelectedMonth, selectedCategory, setSelectedCategory, selectedType, setSelectedType } =
     useFilterStore();
   const { data: transactions = [], isLoading, refetch } = useTransactions();
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const grouped = groupByDate(transactions);
+  const filteredTransactions = useMemo(() => {
+    if (!searchQuery.trim()) return transactions;
+    const q = searchQuery.trim().toLowerCase();
+    return transactions.filter((tx) => {
+      const displayName = tx.merchant
+        ? normalizeMerchantName(tx.merchant)
+        : normalizeBankName(tx.bank ?? '');
+      return displayName.toLowerCase().includes(q);
+    });
+  }, [transactions, searchQuery]);
+
+  const grouped = groupByDate(filteredTransactions);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -52,6 +72,50 @@ export default function TransactionsScreen() {
 
       {/* Month Picker */}
       <MonthPicker selectedMonth={selectedMonth} onChange={setSelectedMonth} />
+
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <MaterialIcons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search by merchant..."
+          placeholderTextColor={colors.textSecondary}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          returnKeyType="search"
+          clearButtonMode="while-editing"
+        />
+        {searchQuery.length > 0 && (
+          <MaterialIcons
+            name="close"
+            size={18}
+            color={colors.textSecondary}
+            onPress={() => setSearchQuery('')}
+            style={styles.clearIcon}
+          />
+        )}
+      </View>
+
+      {/* Type Filter */}
+      <View style={styles.typeFilterRow}>
+        {TYPE_FILTERS.map(({ label, value }) => (
+          <Chip
+            key={value}
+            selected={selectedType === value}
+            onPress={() => setSelectedType(value)}
+            style={[
+              styles.filterChip,
+              selectedType === value && styles.filterChipActive,
+            ]}
+            textStyle={
+              selectedType === value ? styles.filterChipTextActive : styles.filterChipText
+            }
+            compact
+          >
+            {label}
+          </Chip>
+        ))}
+      </View>
 
       {/* Category Filter */}
       <View>
@@ -133,6 +197,37 @@ function createStyles(colors: AppColors) {
       alignItems: 'center',
     },
     title: { fontSize: 22, fontWeight: '800', color: colors.textPrimary },
+    searchContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 4,
+      paddingHorizontal: 12,
+      backgroundColor: colors.filterChipBg,
+      borderRadius: 10,
+      height: 40,
+    },
+    searchIcon: {
+      marginRight: 8,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 14,
+      color: colors.textPrimary,
+      paddingVertical: 0,
+    },
+    clearIcon: {
+      marginLeft: 4,
+      padding: 2,
+    },
+    typeFilterRow: {
+      flexDirection: 'row',
+      paddingHorizontal: 16,
+      paddingTop: 8,
+      paddingBottom: 2,
+      gap: 8,
+    },
     filterRow: {
       paddingHorizontal: 16,
       paddingVertical: 8,
