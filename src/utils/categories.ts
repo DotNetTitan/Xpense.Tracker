@@ -12,8 +12,10 @@ export const CATEGORIES: Record<string, Category> = {
   Health: { name: 'Health', color: '#66BB6A', icon: 'local-hospital' },
   Travel: { name: 'Travel', color: '#FFA726', icon: 'flight' },
   Groceries: { name: 'Groceries', color: '#8BC34A', icon: 'local-grocery-store' },
+  Grocery: { name: 'Grocery', color: '#26A69A', icon: 'shopping-cart' },
   Education: { name: 'Education', color: '#42A5F5', icon: 'school' },
   Finance: { name: 'Finance', color: '#7E57C2', icon: 'account-balance' },
+  Rent: { name: 'Rent', color: '#5C6BC0', icon: 'home' },
   Uncategorized: { name: 'Uncategorized', color: '#90A4AE', icon: 'category' },
 };
 
@@ -61,8 +63,16 @@ const MERCHANT_KEYWORDS: Array<{ keywords: string[]; category: string }> = [
     category: 'Travel',
   },
   {
-    keywords: ['bigbasket', 'grofers', 'blinkit', 'zepto', 'dmart', 'reliance fresh', 'more supermarket', 'supermarket', 'grocery'],
+    keywords: ['bigbasket', 'grofers', 'blinkit', 'zepto', 'dmart', 'reliance fresh', 'more supermarket', 'supermarket'],
     category: 'Groceries',
+  },
+  {
+    keywords: ['grocery', 'kirana', 'provisions', 'vegetables', 'fruits', 'fresh market'],
+    category: 'Grocery',
+  },
+  {
+    keywords: ['rent', 'house rent', 'pg rent', 'room rent', 'landlord', 'flat rent', 'accommodation', 'monthly rent'],
+    category: 'Rent',
   },
   {
     keywords: ['udemy', 'coursera', 'byju', 'unacademy', 'school', 'college', 'university', 'tuition', 'education', 'library'],
@@ -90,6 +100,8 @@ const SMS_KEYWORDS: Array<{ keywords: string[]; category: string }> = [
   { keywords: ['apollo pharmacy', 'medplus', 'netmeds', 'tata 1mg', 'practo'], category: 'Health' },
   { keywords: ['makemytrip', 'goibibo', 'cleartrip', 'indigo airlines', 'air india', 'spicejet'], category: 'Travel' },
   { keywords: ['bigbasket', 'blinkit', 'zepto', 'grofers', 'dmart'], category: 'Groceries' },
+  { keywords: ['kirana', 'provisions store', 'fresh market'], category: 'Grocery' },
+  { keywords: ['house rent', 'room rent', 'pg rent', 'flat rent', 'monthly rent', 'landlord'], category: 'Rent' },
   { keywords: ['udemy', 'coursera', 'byjus', 'unacademy'], category: 'Education' },
   { keywords: ['mutual fund', 'hdfc life', 'icici prudential', 'lic premium', 'zerodha', 'groww'], category: 'Finance' },
 ];
