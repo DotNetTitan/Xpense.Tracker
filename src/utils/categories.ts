@@ -12,7 +12,7 @@ export const CATEGORIES: Record<string, Category> = {
   Health: { name: 'Health', color: '#66BB6A', icon: 'local-hospital' },
   Travel: { name: 'Travel', color: '#FFA726', icon: 'flight' },
   Groceries: { name: 'Groceries', color: '#8BC34A', icon: 'local-grocery-store' },
-  Grocery: { name: 'Grocery', color: '#26A69A', icon: 'shopping-cart' },
+  Restaurants: { name: 'Restaurants', color: '#26A69A', icon: 'shopping-cart' },
   Education: { name: 'Education', color: '#42A5F5', icon: 'school' },
   Finance: { name: 'Finance', color: '#7E57C2', icon: 'account-balance' },
   Rent: { name: 'Rent', color: '#5C6BC0', icon: 'home' },
@@ -67,8 +67,8 @@ const MERCHANT_KEYWORDS: Array<{ keywords: string[]; category: string }> = [
     category: 'Groceries',
   },
   {
-    keywords: ['grocery', 'kirana', 'provisions', 'vegetables', 'fruits', 'fresh market'],
-    category: 'Grocery',
+    keywords: ['Zam Zam', 'Turf Cafe', 'Supreme', 'Food', 'Upper Crust', 'Kadalas'],
+    category: 'Restaurants',
   },
   {
     keywords: ['rent', 'house rent', 'pg rent', 'room rent', 'landlord', 'flat rent', 'accommodation', 'monthly rent'],
