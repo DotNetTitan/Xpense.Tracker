@@ -4,7 +4,6 @@ export const CATEGORIES: Record<string, Category> = {
   Swiggy: { name: 'Swiggy', color: '#FC8019', icon: 'delivery-dining' },
   Zomato: { name: 'Zomato', color: '#E23744', icon: 'delivery-dining' },
   Uber: { name: 'Uber', color: '#607D8B', icon: 'directions-car' },
-  Food: { name: 'Food', color: '#FF6B6B', icon: 'restaurant' },
   Transport: { name: 'Transport', color: '#FFB347', icon: 'directions-car' },
   Shopping: { name: 'Shopping', color: '#4FC3F7', icon: 'shopping-bag' },
   Entertainment: { name: 'Entertainment', color: '#AB47BC', icon: 'movie' },
@@ -12,7 +11,7 @@ export const CATEGORIES: Record<string, Category> = {
   Health: { name: 'Health', color: '#66BB6A', icon: 'local-hospital' },
   Travel: { name: 'Travel', color: '#FFA726', icon: 'flight' },
   Groceries: { name: 'Groceries', color: '#8BC34A', icon: 'local-grocery-store' },
-  Grocery: { name: 'Grocery', color: '#26A69A', icon: 'shopping-cart' },
+  Restaurants: { name: 'Restaurants', color: '#26A69A', icon: 'restaurant' },
   Education: { name: 'Education', color: '#42A5F5', icon: 'school' },
   Finance: { name: 'Finance', color: '#7E57C2', icon: 'account-balance' },
   Rent: { name: 'Rent', color: '#5C6BC0', icon: 'home' },
@@ -34,10 +33,6 @@ const MERCHANT_KEYWORDS: Array<{ keywords: string[]; category: string }> = [
   { keywords: ['swiggy'], category: 'Swiggy' },
   { keywords: ['zomato'], category: 'Zomato' },
   { keywords: ['uber'], category: 'Uber' },
-  {
-    keywords: ['mcdonald', 'kfc', 'pizza', 'burger', 'cafe', 'restaurant', 'food', 'domino', 'subway', 'dunkin', 'starbucks'],
-    category: 'Food',
-  },
   {
     keywords: ['ola', 'rapido', 'redbus', 'petrol', 'fuel', 'metro', 'irctc', 'taxi', 'bus', 'transport'],
     category: 'Transport',
@@ -67,8 +62,8 @@ const MERCHANT_KEYWORDS: Array<{ keywords: string[]; category: string }> = [
     category: 'Groceries',
   },
   {
-    keywords: ['grocery', 'kirana', 'provisions', 'vegetables', 'fruits', 'fresh market'],
-    category: 'Grocery',
+    keywords: ['zam zam', 'turf cafe', 'supreme', 'upper crust', 'kadalas', 'veg', 'dhaba', 'drink', 'drinks', 'ambrosia', 'bistro', 'mcdonald', 'kfc', 'pizza', 'burger', 'cafe', 'restaurant', 'food', 'domino', 'subway', 'dunkin', 'starbucks'],
+    category: 'Restaurants',
   },
   {
     keywords: ['rent', 'house rent', 'pg rent', 'room rent', 'landlord', 'flat rent', 'accommodation', 'monthly rent'],
