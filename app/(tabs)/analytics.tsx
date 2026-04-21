@@ -5,12 +5,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppColors } from '../../constants/theme';
 import { useAppColors } from '../../hooks/use-app-colors';
 import { EmptyState } from '../../src/components/EmptyState';
+import { ExportButton } from '../../src/components/ExportButton';
 import { MonthlyBarChart } from '../../src/components/MonthlyBarChart';
 import { MonthPicker } from '../../src/components/MonthPicker';
 import { SpendingDonutChart } from '../../src/components/SpendingDonutChart';
 import { ThemeToggle } from '../../src/components/ThemeToggle';
-import { useCategoryTotals, useMonthlyTotals } from '../../src/hooks/useTransactions';
+import { useCategoryTotals, useMonthlyTotals, useTransactions } from '../../src/hooks/useTransactions';
 import { useFilterStore } from '../../src/store/filterStore';
+import { exportAnalyticsToExcel, generateExportFilename } from '../../src/utils/excelExport';
 import { formatCurrency, monthLabel } from '../../src/utils/formatters';
 
 export default function AnalyticsScreen() {
@@ -19,9 +21,15 @@ export default function AnalyticsScreen() {
   const { selectedMonth, setSelectedMonth } = useFilterStore();
   const { data: categoryTotals = [], isLoading: loadingCats } = useCategoryTotals();
   const { data: monthlyTotals = [], isLoading: loadingMonthly } = useMonthlyTotals(6);
+  const { data: transactions = [] } = useTransactions();
 
   const totalSpent = categoryTotals.reduce((s, c) => s + c.total, 0);
   const hasData = categoryTotals.length > 0 || monthlyTotals.some((m) => m.total > 0);
+
+  const handleExport = async () => {
+    const filename = generateExportFilename('analytics');
+    await exportAnalyticsToExcel(categoryTotals, monthlyTotals, transactions, filename);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -33,7 +41,10 @@ export default function AnalyticsScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Analytics</Text>
-          <ThemeToggle size={24} />
+          <View style={styles.headerActions}>
+            <ExportButton onPress={handleExport} disabled={!hasData} />
+            <ThemeToggle size={24} />
+          </View>
         </View>
 
         {/* Month Picker */}
@@ -129,6 +140,11 @@ function createStyles(colors: AppColors) {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
+    },
+    headerActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
     },
     title: { fontSize: 22, fontWeight: '800', color: colors.textPrimary },
     card: {
