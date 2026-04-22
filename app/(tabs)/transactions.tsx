@@ -1,18 +1,17 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import {
-  FlatList,
-  RefreshControl,
-  StyleSheet,
-  TextInput,
-  View,
+    FlatList,
+    RefreshControl,
+    StyleSheet,
+    TextInput,
+    View,
 } from 'react-native';
 import { ActivityIndicator, Chip, Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppColors } from '../../constants/theme';
 import { useAppColors } from '../../hooks/use-app-colors';
 import { EmptyState } from '../../src/components/EmptyState';
-import { ExportButton } from '../../src/components/ExportButton';
 import { MonthPicker } from '../../src/components/MonthPicker';
 import { ThemeToggle } from '../../src/components/ThemeToggle';
 import { TransactionCard } from '../../src/components/TransactionCard';
@@ -21,7 +20,6 @@ import { useTransactions } from '../../src/hooks/useTransactions';
 import { useFilterStore } from '../../src/store/filterStore';
 import { Transaction } from '../../src/types';
 import { CATEGORIES } from '../../src/utils/categories';
-import { exportTransactionsToExcel, generateExportFilename } from '../../src/utils/excelExport';
 import { formatDate, normalizeBankName, normalizeMerchantName } from '../../src/utils/formatters';
 
 const ALL_CATEGORIES = ['All', ...Object.keys(CATEGORIES)];
@@ -64,20 +62,12 @@ export default function TransactionsScreen() {
 
   const grouped = groupByDate(filteredTransactions);
 
-  const handleExport = async () => {
-    const filename = generateExportFilename('transactions');
-    await exportTransactionsToExcel(filteredTransactions, filename);
-  };
-
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Transactions</Text>
-        <View style={styles.headerActions}>
-          <ExportButton onPress={handleExport} disabled={filteredTransactions.length === 0} />
-          <ThemeToggle size={24} />
-        </View>
+        <ThemeToggle size={24} />
       </View>
 
       {/* Month Picker */}
@@ -205,11 +195,6 @@ function createStyles(colors: AppColors) {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-    },
-    headerActions: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
     },
     title: { fontSize: 22, fontWeight: '800', color: colors.textPrimary },
     searchContainer: {
