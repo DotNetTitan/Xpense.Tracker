@@ -1,5 +1,5 @@
 import { Share } from 'react-native';
-import * as FileSystem from 'expo-file-system/build/legacy/FileSystem';
+import { File, Paths } from 'expo-file-system';
 import { getAllTransactions } from './db.service';
 import { Transaction } from '../types';
 
@@ -101,16 +101,13 @@ function toExcelXml(transactions: Transaction[]): string {
 }
 
 async function writeExportFile(content: string, extension: 'csv' | 'xls'): Promise<string | null> {
-  const baseDir = FileSystem.documentDirectory;
-  if (!baseDir) {
-    return null;
-  }
   const timestamp = new Date().toISOString().replace(/[.:]/g, '-');
-  const uri = `${baseDir}transactions-${timestamp}.${extension}`;
-  await FileSystem.writeAsStringAsync(uri, content, {
+  const file = new File(Paths.document, `transactions-${timestamp}.${extension}`);
+  file.create({ intermediates: true, overwrite: true });
+  file.write(content, {
     encoding: 'utf8',
   });
-  return uri;
+  return file.uri;
 }
 
 async function shareExport(content: string, format: 'CSV' | 'Excel', fileUri: string | null) {
