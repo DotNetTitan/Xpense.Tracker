@@ -1,4 +1,4 @@
-import { Share } from 'react-native';
+import { Platform, Share } from 'react-native';
 import { File, Paths } from 'expo-file-system';
 import { getAllTransactions } from './db.service';
 import { Transaction } from '../types';
@@ -121,16 +121,23 @@ async function shareExport(content: string, format: 'CSV' | 'Excel', fileUri: st
   });
 }
 
-async function emailExport(content: string, format: 'CSV' | 'Excel', fileUri: string | null) {
-  const message = fileUri
-    ? `Attached is your ${format} export.\n\nIf your mail app does not attach automatically, file location:\n${fileUri}`
-    : `Your ${format} export is below:\n\n${content}`;
+async function emailExport(
+  content: string,
+  format: 'CSV' | 'Excel',
+  fileUri: string | null
+) {
+  const url = fileUri
+    ? Platform.OS === 'android'
+      ? new File(fileUri).contentUri
+      : fileUri
+    : undefined;
+  const message = fileUri ? `Attached is your ${format} export.` : `Your ${format} export is below:\n\n${content}`;
 
   await Share.share({
     title: `Email ${format} Export`,
     subject: `XpenseTracker ${format} Export`,
     message,
-    url: fileUri ?? undefined,
+    url,
   });
 }
 
