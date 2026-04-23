@@ -121,6 +121,19 @@ async function shareExport(content: string, format: 'CSV' | 'Excel', fileUri: st
   });
 }
 
+async function emailExport(content: string, format: 'CSV' | 'Excel', fileUri: string | null) {
+  const message = fileUri
+    ? `Attached is your ${format} export.\n\nIf your mail app does not attach automatically, file location:\n${fileUri}`
+    : `Your ${format} export is below:\n\n${content}`;
+
+  await Share.share({
+    title: `Email ${format} Export`,
+    subject: `XpenseTracker ${format} Export`,
+    message,
+    url: fileUri ?? undefined,
+  });
+}
+
 export async function exportTransactionsAsCsv(): Promise<string | null> {
   const transactions = getAllTransactions();
   const csvContent = toCsv(transactions);
@@ -134,5 +147,21 @@ export async function exportTransactionsAsExcel(): Promise<string | null> {
   const excelContent = toExcelXml(transactions);
   const fileUri = await writeExportFile(excelContent, 'xls');
   await shareExport(excelContent, 'Excel', fileUri);
+  return fileUri;
+}
+
+export async function emailTransactionsAsCsv(): Promise<string | null> {
+  const transactions = getAllTransactions();
+  const csvContent = toCsv(transactions);
+  const fileUri = await writeExportFile(csvContent, 'csv');
+  await emailExport(csvContent, 'CSV', fileUri);
+  return fileUri;
+}
+
+export async function emailTransactionsAsExcel(): Promise<string | null> {
+  const transactions = getAllTransactions();
+  const excelContent = toExcelXml(transactions);
+  const fileUri = await writeExportFile(excelContent, 'xls');
+  await emailExport(excelContent, 'Excel', fileUri);
   return fileUri;
 }

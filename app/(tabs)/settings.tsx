@@ -7,6 +7,8 @@ import { AppColors } from '../../constants/theme';
 import { useAppColors } from '../../hooks/use-app-colors';
 import { ThemeToggle } from '../../src/components/ThemeToggle';
 import {
+  emailTransactionsAsCsv,
+  emailTransactionsAsExcel,
   exportTransactionsAsCsv,
   exportTransactionsAsExcel,
 } from '../../src/services/export.service';
@@ -59,6 +61,30 @@ export default function SettingsScreen() {
       }
     } catch {
       Alert.alert('Export failed', 'Unable to export transactions as Excel.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleCsvEmail = async () => {
+    try {
+      setIsExporting(true);
+      await emailTransactionsAsCsv();
+      Alert.alert('Email opened', 'Choose your email app and recipient to send the CSV.');
+    } catch {
+      Alert.alert('Email failed', 'Unable to prepare CSV email export.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExcelEmail = async () => {
+    try {
+      setIsExporting(true);
+      await emailTransactionsAsExcel();
+      Alert.alert('Email opened', 'Choose your email app and recipient to send the Excel file.');
+    } catch {
+      Alert.alert('Email failed', 'Unable to prepare Excel email export.');
     } finally {
       setIsExporting(false);
     }
@@ -151,6 +177,24 @@ export default function SettingsScreen() {
             >
               <Text style={styles.optionLabel}>Export as Excel (.xls)</Text>
               <MaterialIcons name="grid-on" size={20} color={colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.optionRow}
+              onPress={handleCsvEmail}
+              activeOpacity={0.7}
+              disabled={isExporting}
+            >
+              <Text style={styles.optionLabel}>Email CSV</Text>
+              <MaterialIcons name="mail-outline" size={20} color={colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.optionRow}
+              onPress={handleExcelEmail}
+              activeOpacity={0.7}
+              disabled={isExporting}
+            >
+              <Text style={styles.optionLabel}>Email Excel (.xls)</Text>
+              <MaterialIcons name="mail-outline" size={20} color={colors.primary} />
             </TouchableOpacity>
           </View>
         </Surface>
