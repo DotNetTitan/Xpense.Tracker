@@ -1,11 +1,15 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Surface, Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppColors } from '../../constants/theme';
 import { useAppColors } from '../../hooks/use-app-colors';
 import { ThemeToggle } from '../../src/components/ThemeToggle';
+import {
+  exportTransactionsAsCsv,
+  exportTransactionsAsExcel,
+} from '../../src/services/export.service';
 import {
   SYNC_DAYS_OPTIONS,
   SyncDaysOption,
@@ -26,6 +30,39 @@ export default function SettingsScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { syncDaysBack, setSyncDaysBack } = useSettingsStore();
   const [syncPeriodExpanded, setSyncPeriodExpanded] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleCsvExport = async () => {
+    try {
+      setIsExporting(true);
+      const fileUri = await exportTransactionsAsCsv();
+      if (fileUri) {
+        Alert.alert('Export complete', `CSV export saved to:\n${fileUri}`);
+      } else {
+        Alert.alert('Export complete', 'CSV content shared successfully.');
+      }
+    } catch {
+      Alert.alert('Export failed', 'Unable to export transactions as CSV.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExcelExport = async () => {
+    try {
+      setIsExporting(true);
+      const fileUri = await exportTransactionsAsExcel();
+      if (fileUri) {
+        Alert.alert('Export complete', `Excel export saved to:\n${fileUri}`);
+      } else {
+        Alert.alert('Export complete', 'Excel content shared successfully.');
+      }
+    } catch {
+      Alert.alert('Export failed', 'Unable to export transactions as Excel.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -86,6 +123,36 @@ export default function SettingsScreen() {
               </View>
             </>
           )}
+        </Surface>
+
+        <Surface style={styles.card} elevation={1}>
+          <View style={styles.cardHeaderLeft}>
+            <MaterialIcons name="download" size={20} color={colors.primary} />
+            <Text style={styles.cardTitle}>Data Export</Text>
+          </View>
+          <Text style={styles.cardSubtitle}>
+            Export all transactions as CSV or Excel-compatible (.xls) file.
+          </Text>
+          <View style={styles.optionsList}>
+            <TouchableOpacity
+              style={styles.optionRow}
+              onPress={handleCsvExport}
+              activeOpacity={0.7}
+              disabled={isExporting}
+            >
+              <Text style={styles.optionLabel}>Export as CSV</Text>
+              <MaterialIcons name="table-chart" size={20} color={colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.optionRow}
+              onPress={handleExcelExport}
+              activeOpacity={0.7}
+              disabled={isExporting}
+            >
+              <Text style={styles.optionLabel}>Export as Excel (.xls)</Text>
+              <MaterialIcons name="grid-on" size={20} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
         </Surface>
       </ScrollView>
     </SafeAreaView>
