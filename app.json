@@ -9,7 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.xpensetracker.app",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "We use Face ID for secure authentication"
+      }
     },
     "android": {
       "package": "com.xpensetracker.app",

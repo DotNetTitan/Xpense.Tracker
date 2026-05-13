@@ -9,6 +9,10 @@
  *   ID:      399444816579-9jso2357r99ha3ab8oei1m7ad203da9k.apps.googleusercontent.com
  *   Package: com.xpensetracker.app
  *   SHA-1:   80:F5:F9:A5:CA:2D:E0:04:D8:AA:5F:18:AE:48:E2:99:63:27:2B:36
+ *
+ * GCP iOS client (to be created):
+ *   Bundle ID: com.xpensetracker.app
+ *   App Store ID: <your-app-store-id>
  */
 
 export const GMAIL_CONFIG = {
