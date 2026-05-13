@@ -12,7 +12,8 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.xpensetracker.app",
       "infoPlist": {
-        "NSFaceIDUsageDescription": "We use Face ID for secure authentication"
+        "NSFaceIDUsageDescription": "We use Face ID for secure authentication",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
